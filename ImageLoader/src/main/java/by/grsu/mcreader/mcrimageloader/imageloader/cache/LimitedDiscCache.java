@@ -159,33 +159,57 @@ public class LimitedDiscCache extends BaseDiscCache {
     }
 
     private int removeLastUsed() {
+
         if (LRUList.size() == 0) {
+
             return 0;
+
         }
-        long oldest = -1;
+
+        long oldest = -1, entryValue = -1;
+
         String oldestKey = null;
-        Set<Entry<String, Long>> entries = LRUList.entrySet();
+
         synchronized (LRUList) {
-            for (Entry<String, Long> entry : entries) {
+
+            for (Entry<String, Long> entry : LRUList.entrySet()) {
+
+                entryValue = entry.getValue();
+
                 if (oldest == -1) {
-                    oldest = entry.getValue();
+
+                    oldest = entryValue;
                     oldestKey = entry.getKey();
-                } else if (oldest > entry.getValue()) {
-                    oldest = entry.getValue();
+
+                } else if (oldest > entryValue) {
+
+                    oldest = entryValue;
                     oldestKey = entry.getKey();
+
                 }
             }
         }
+
         if (oldestKey == null) {
+
             return 0;
+
         }
+
         File toRemove = new File(mCacheDir, oldestKey);
+
         if (!toRemove.exists()) {
+
             LRUList.remove(oldestKey);
+
         }
+
         int removedSize = (int) toRemove.length();
+
         toRemove.delete();
+
         LRUList.remove(oldestKey);
+
         return removedSize;
 
     }

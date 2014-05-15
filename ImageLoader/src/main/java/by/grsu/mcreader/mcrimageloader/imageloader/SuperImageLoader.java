@@ -41,7 +41,7 @@ public class SuperImageLoader {
     private final Context mContext;
     private final Resources mResources;
 
-    private final ImageCacher mImageCacher;
+    private final CacheHelper mCacheHelper;
     private final ImageWorker mImageWorker;
 
     private final Object mPauseWorkLock = new Object();
@@ -50,7 +50,7 @@ public class SuperImageLoader {
     private SuperImageLoader(ImageLoaderBuilder builder) {
         mContext = builder.mContext;
         mResources = builder.mResources;
-        mImageCacher = builder.mImageCacher;
+        mCacheHelper = builder.mCacheHelper;
         mImageWorker = builder.mImageWorker;
         mPlaceholderBitmap = builder.mPlaceHolderImage;
         mFadeIn = builder.mFadeIn;
@@ -89,9 +89,9 @@ public class SuperImageLoader {
 
         BitmapDrawable bitmapDrawable = null;
 
-        if (mImageCacher != null) {
+        if (mCacheHelper != null) {
 
-            bitmapDrawable = mImageCacher.getBitmapFromMemoryCache(url);
+            bitmapDrawable = mCacheHelper.getBitmapFromMemoryCache(url);
 
             if (bitmapDrawable != null) {
 
@@ -110,7 +110,7 @@ public class SuperImageLoader {
                 }
             }
 
-            bitmapDrawable = mImageCacher.getBitmapFromFileCache(url);
+            bitmapDrawable = mCacheHelper.getBitmapFromFileCache(url);
         }
 
         if (bitmapDrawable != null) {
@@ -158,7 +158,7 @@ public class SuperImageLoader {
 
             }
 
-            mImageCacher.put(url, bitmapDrawable);
+            mCacheHelper.put(url, bitmapDrawable);
         }
 
         return bitmapDrawable;
@@ -170,7 +170,7 @@ public class SuperImageLoader {
 
     public Bitmap loadBitmap(String url, int widthInPx, int heightInPx) {
 
-        BitmapDrawable bitmapDrawable = mImageCacher == null ? null : mImageCacher.getBitmapFromMemoryCache(url);
+        BitmapDrawable bitmapDrawable = mCacheHelper == null ? null : mCacheHelper.getBitmapFromMemoryCache(url);
 
         Bitmap result = bitmapDrawable == null ? null : bitmapDrawable.getBitmap();
 
@@ -247,7 +247,7 @@ public class SuperImageLoader {
 
         }
 
-        BitmapDrawable bitmapDrawable = TextUtils.isEmpty(url) ? new BitmapDrawable(mResources, mPlaceholderBitmap) : mImageCacher == null ? null : mImageCacher.getBitmapFromMemoryCache(url);
+        BitmapDrawable bitmapDrawable = TextUtils.isEmpty(url) ? new BitmapDrawable(mResources, mPlaceholderBitmap) : mCacheHelper == null ? null : mCacheHelper.getBitmapFromMemoryCache(url);
 
         if (bitmapDrawable != null) {
 
@@ -297,7 +297,7 @@ public class SuperImageLoader {
             return;
         }
 
-        BitmapDrawable bitmapDrawable = mImageCacher == null ? null : mImageCacher.getBitmapFromMemoryCache(url);
+        BitmapDrawable bitmapDrawable = mCacheHelper == null ? null : mCacheHelper.getBitmapFromMemoryCache(url);
 
         if (bitmapDrawable != null) {
 
@@ -467,7 +467,7 @@ public class SuperImageLoader {
                 return null;
             }
 
-            BitmapDrawable bitmapDrawable = mImageCacher == null ? null : mImageCacher.getBitmapFromFileCache(mUrl);
+            BitmapDrawable bitmapDrawable = mCacheHelper == null ? null : mCacheHelper.getBitmapFromFileCache(mUrl);
             Bitmap result = bitmapDrawable == null ? null : bitmapDrawable.getBitmap();
 
             if (result == null) {
@@ -571,7 +571,7 @@ public class SuperImageLoader {
 
             }
 
-            BitmapDrawable bitmapDrawable = mImageCacher == null ? null : mImageCacher.getBitmapFromFileCache(mUrl);
+            BitmapDrawable bitmapDrawable = mCacheHelper == null ? null : mCacheHelper.getBitmapFromFileCache(mUrl);
 
             if (bitmapDrawable != null) {
 
@@ -597,7 +597,7 @@ public class SuperImageLoader {
 
                     }
 
-                    mImageCacher.put(mUrl, bitmapDrawable);
+                    mCacheHelper.put(mUrl, bitmapDrawable);
                 }
 
             } catch (IOException e) {
@@ -673,7 +673,7 @@ public class SuperImageLoader {
         private final Context mContext;
         private final Resources mResources;
 
-        private final ImageCacher mImageCacher;
+        private final CacheHelper mCacheHelper;
         private final ImageWorker mImageWorker;
 
         public ImageLoaderBuilder(Context context) {
@@ -681,42 +681,42 @@ public class SuperImageLoader {
             mContext = context;
             mResources = context.getResources();
 
-            mImageCacher = new ImageCacher(context);
-            mImageWorker = new ImageWorker(context, mImageCacher);
+            mCacheHelper = new CacheHelper(context);
+            mImageWorker = new ImageWorker(mCacheHelper);
 
         }
 
         public ImageLoaderBuilder setDiscCacheEnabled(boolean isEnabled) {
 
-            mImageCacher.setDiscCacheEnabled(isEnabled);
+            mCacheHelper.setDiscCacheEnabled(isEnabled);
 
             return this;
         }
 
         public ImageLoaderBuilder setMemoryCacheEnabled(boolean isEnabled) {
 
-            mImageCacher.setMemoryCacheEnabled(isEnabled);
+            mCacheHelper.setMemoryCacheEnabled(isEnabled);
 
             return this;
         }
 
         public ImageLoaderBuilder setDiscCacheSize(int discCacheSizeInBytes) {
 
-            mImageCacher.setDiscCacheSize(discCacheSizeInBytes);
+            mCacheHelper.setDiscCacheSize(discCacheSizeInBytes);
 
             return this;
         }
 
         public ImageLoaderBuilder setMemoryCacheSize(int memoryCacheSizeInBytes) {
 
-            mImageCacher.setMemoryCacheSize(memoryCacheSizeInBytes);
+            mCacheHelper.setMemoryCacheSize(memoryCacheSizeInBytes);
 
             return this;
         }
 
         public ImageLoaderBuilder setPartOfAvailibleMemoryCache(float part) {
 
-            mImageCacher.setPartOfAvailableMemoryCache(part);
+            mCacheHelper.setPartOfAvailableMemoryCache(part);
 
             return this;
         }

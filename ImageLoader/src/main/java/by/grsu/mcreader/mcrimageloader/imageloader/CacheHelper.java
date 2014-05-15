@@ -21,9 +21,9 @@ import android.graphics.drawable.BitmapDrawable;
 import android.support.v4.util.LruCache;
 import android.text.TextUtils;
 
-public class ImageCacher {
+public class CacheHelper {
 
-    protected static final String LOG_TAG = ImageCacher.class.getSimpleName();
+    protected static final String LOG_TAG = CacheHelper.class.getSimpleName();
 
     public static final String SYSTEM_SERVICE_KEY = "framework:imagecacher";
 
@@ -50,7 +50,7 @@ public class ImageCacher {
 
     private final Context mContext;
 
-    protected ImageCacher(Context context) {
+    protected CacheHelper(Context context) {
         mContext = context;
         mResources = context.getResources();
         init(context);

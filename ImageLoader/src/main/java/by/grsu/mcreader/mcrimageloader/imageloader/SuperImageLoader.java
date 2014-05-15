@@ -1,5 +1,6 @@
 package by.grsu.mcreader.mcrimageloader.imageloader;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
@@ -48,13 +49,19 @@ public class SuperImageLoader {
     private boolean mPauseWork = false;
 
     private SuperImageLoader(ImageLoaderBuilder builder) {
+
         mContext = builder.mContext;
         mResources = builder.mResources;
-        mCacheHelper = builder.mCacheHelper;
-        mImageWorker = builder.mImageWorker;
         mPlaceholderBitmap = builder.mPlaceHolderImage;
         mFadeIn = builder.mFadeIn;
         mFadeInTime = builder.mFadeInTime;
+
+        mCacheHelper = new CacheHelper(mContext, builder.mMemoryCacheEnabled, builder.mDiscCacheEnabled);
+        mImageWorker = new ImageWorker(mCacheHelper);
+
+        mCacheHelper.setDiscCacheSize(builder.mDiscCacheSize);
+        mCacheHelper.setMemoryCacheSize(builder.mMemoryCacheSize);
+
     }
 
     public void setPlaceholder(int resDrawableID) {
@@ -110,7 +117,7 @@ public class SuperImageLoader {
                 }
             }
 
-            bitmapDrawable = mCacheHelper.getBitmapFromFileCache(url);
+            bitmapDrawable = mCacheHelper.getBitmapFromFileCache(mContext.getResources(), url);
         }
 
         if (bitmapDrawable != null) {
@@ -388,6 +395,7 @@ public class SuperImageLoader {
         }
     }
 
+    @SuppressLint("NewApi")
     private void setBackground(ImageView imageView) {
 
         if (AndroidVersionsUtils.hasJellyBean()) {
@@ -467,7 +475,7 @@ public class SuperImageLoader {
                 return null;
             }
 
-            BitmapDrawable bitmapDrawable = mCacheHelper == null ? null : mCacheHelper.getBitmapFromFileCache(mUrl);
+            BitmapDrawable bitmapDrawable = mCacheHelper == null ? null : mCacheHelper.getBitmapFromFileCache(mContext.getResources(), mUrl);
             Bitmap result = bitmapDrawable == null ? null : bitmapDrawable.getBitmap();
 
             if (result == null) {
@@ -571,7 +579,7 @@ public class SuperImageLoader {
 
             }
 
-            BitmapDrawable bitmapDrawable = mCacheHelper == null ? null : mCacheHelper.getBitmapFromFileCache(mUrl);
+            BitmapDrawable bitmapDrawable = mCacheHelper == null ? null : mCacheHelper.getBitmapFromFileCache(mContext.getResources(), mUrl);
 
             if (bitmapDrawable != null) {
 
@@ -673,50 +681,51 @@ public class SuperImageLoader {
         private final Context mContext;
         private final Resources mResources;
 
-        private final CacheHelper mCacheHelper;
-        private final ImageWorker mImageWorker;
+        private boolean mMemoryCacheEnabled, mDiscCacheEnabled;
+
+        private int mDiscCacheSize = -1, mMemoryCacheSize = -1;
+        private float mPartOfAvailableMemoryCache = -1;
 
         public ImageLoaderBuilder(Context context) {
 
             mContext = context;
             mResources = context.getResources();
 
-            mCacheHelper = new CacheHelper(context);
-            mImageWorker = new ImageWorker(mCacheHelper);
-
         }
 
         public ImageLoaderBuilder setDiscCacheEnabled(boolean isEnabled) {
 
-            mCacheHelper.setDiscCacheEnabled(isEnabled);
+            mDiscCacheEnabled = isEnabled;
 
             return this;
         }
 
         public ImageLoaderBuilder setMemoryCacheEnabled(boolean isEnabled) {
 
-            mCacheHelper.setMemoryCacheEnabled(isEnabled);
+            mMemoryCacheEnabled = isEnabled;
 
             return this;
         }
 
         public ImageLoaderBuilder setDiscCacheSize(int discCacheSizeInBytes) {
 
-            mCacheHelper.setDiscCacheSize(discCacheSizeInBytes);
+            mDiscCacheSize = discCacheSizeInBytes;
 
             return this;
         }
 
         public ImageLoaderBuilder setMemoryCacheSize(int memoryCacheSizeInBytes) {
 
-            mCacheHelper.setMemoryCacheSize(memoryCacheSizeInBytes);
+            mMemoryCacheSize = memoryCacheSizeInBytes;
 
             return this;
         }
 
-        public ImageLoaderBuilder setPartOfAvailibleMemoryCache(float part) {
+        public ImageLoaderBuilder setPartOfAvailableMemoryCache(float part) {
 
-            mCacheHelper.setPartOfAvailableMemoryCache(part);
+            mMemoryCacheSize = -1;
+
+            mPartOfAvailableMemoryCache = part;
 
             return this;
         }

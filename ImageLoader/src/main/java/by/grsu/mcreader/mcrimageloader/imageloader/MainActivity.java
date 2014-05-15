@@ -10,10 +10,12 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.ViewGroup;
 import android.os.Build;
-
+import android.widget.ImageView;
 
 
 public class MainActivity extends ActionBarActivity {
+
+    static SuperImageLoader superImageLoader;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -24,6 +26,8 @@ public class MainActivity extends ActionBarActivity {
                     .add(R.id.container, new PlaceholderFragment())
                     .commit();
         }
+
+        superImageLoader = new SuperImageLoader.ImageLoaderBuilder(this).build();
     }
 
 
@@ -56,8 +60,13 @@ public class MainActivity extends ActionBarActivity {
 
         @Override
         public View onCreateView(LayoutInflater inflater, ViewGroup container,
-                Bundle savedInstanceState) {
+                                 Bundle savedInstanceState) {
             View rootView = inflater.inflate(R.layout.fragment_main, container, false);
+
+            ImageView imageView = (ImageView) rootView.findViewById(R.id.image);
+
+            superImageLoader.loadBitmap(imageView, "http://cs617631.vk.me/v617631409/c5c7/GrJWOllx8i4.jpg");
+
             return rootView;
         }
     }

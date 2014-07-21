@@ -1,11 +1,14 @@
 package by.grsu.mcreader.mcrimageloader.imageloader.callback;
 
+import android.graphics.Bitmap;
+import android.graphics.drawable.BitmapDrawable;
+
 public interface ImageLoaderCallback {
 
-    void onLoadStarted();
+    void onLoadingStarted(String url);
 
-    void onLoadError();
+    abstract void onLoadingError(Exception e, String url);
 
-    void onLoadFinished();
+    abstract void onLoadingFinished(BitmapDrawable drawable);
 
 }

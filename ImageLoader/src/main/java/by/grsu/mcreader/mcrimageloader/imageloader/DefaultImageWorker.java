@@ -6,36 +6,25 @@ import java.io.InputStream;
 import by.grsu.mcreader.mcrimageloader.imageloader.http.HttpWorker;
 import by.grsu.mcreader.mcrimageloader.imageloader.utils.AndroidVersionsUtils;
 import by.grsu.mcreader.mcrimageloader.imageloader.utils.BitmapSizeUtil;
-import by.grsu.mcreader.mcrimageloader.imageloader.utils.Converter;
 import by.grsu.mcreader.mcrimageloader.imageloader.utils.IOUtils;
 
 import android.annotation.TargetApi;
-import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Build;
 import android.util.Log;
 
-public class ImageWorker {
+public class DefaultImageWorker extends BitmapLoader {
 
-    private static final String LOG_TAG = ImageWorker.class.getSimpleName();
+    private static final String LOG_TAG = DefaultImageWorker.class.getSimpleName();
 
     private static final String GIF = "image/gif";
 
-    private final CacheHelper mCacheHelper;
-
     private HttpWorker mHttpWorker;
 
-    protected ImageWorker(CacheHelper cacheHelper) {
+    protected DefaultImageWorker() {
 
         mHttpWorker = new HttpWorker();
-
-        mCacheHelper = cacheHelper;
-    }
-
-    public Bitmap loadBitmap(Context context, String url, int reqWidthDp, int reqHeightDp) throws IOException {
-
-        return loadBitmap(url, Math.round(Converter.convertDpToPixel(context, reqWidthDp)), Math.round(Converter.convertDpToPixel(context, reqHeightDp)));
 
     }
 
@@ -49,23 +38,6 @@ public class ImageWorker {
 
             is = mHttpWorker.getStream(url);
 
-            if (is == null) {
-
-                // Trying to load from file
-                BitmapFactory.Options options = new BitmapFactory.Options();
-
-                options.inJustDecodeBounds = true;
-
-                BitmapFactory.decodeFile(url, options);
-
-                options.inJustDecodeBounds = false;
-                options.inSampleSize = BitmapSizeUtil.calculateInSampleSize(options, reqWidth, reqHeight);
-                options.inPurgeable = true;
-
-                return BitmapFactory.decodeFile(url, options);
-
-            }
-
             fis = new FlushedInputStream(is);
 
             fis.mark(is.available());
@@ -76,20 +48,17 @@ public class ImageWorker {
 
             BitmapFactory.decodeStream(fis, null, options);
 
+            options.inJustDecodeBounds = false;
+
             options.inSampleSize = BitmapSizeUtil.calculateInSampleSize(options, reqWidth, reqHeight);
 
-            Log.d(LOG_TAG, "input width = " + options.outWidth + ", " + "input height = " + options.outHeight);
-            Log.d(LOG_TAG, "sample size = " + options.inSampleSize);
-            Log.d(LOG_TAG, "format = " + options.outMimeType);
-
-            options.inJustDecodeBounds = false;
+            Log.d(LOG_TAG, String.format("input width = %s, input height = %s \nsample size = %s \nformat = %s", options.outWidth, options.outHeight, options.inSampleSize, options.outMimeType));
 
             if (AndroidVersionsUtils.hasHoneycomb() && options.outMimeType != null && !options.outMimeType.equals(GIF)) {
 
-                addInBitmapOptions(options, mCacheHelper);
+                addInBitmapOptions(options);
 
             }
-
 
             fis.reset();
 
@@ -97,7 +66,7 @@ public class ImageWorker {
 
             if (result != null) {
 
-                Log.d(LOG_TAG, "output width = " + result.getWidth() + "\n" + "output height = " + result.getHeight() + "\n" + "result config" + result.getConfig());
+                Log.d(LOG_TAG, String.format("output width = %s, output height = %s \nconfig = %s", result.getWidth(), result.getHeight(), result.getConfig()));
 
             }
 
@@ -112,7 +81,9 @@ public class ImageWorker {
     }
 
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
-    private static void addInBitmapOptions(BitmapFactory.Options options, CacheHelper cache) {
+    private static void addInBitmapOptions(BitmapFactory.Options options) {
+
+        CacheHelper cache = SuperImageLoader.getCacheHelper();
 
         options.inMutable = true;
 

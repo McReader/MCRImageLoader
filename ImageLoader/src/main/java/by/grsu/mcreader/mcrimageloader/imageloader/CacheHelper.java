@@ -36,7 +36,9 @@ public class CacheHelper {
 
     protected CacheHelper(Context context, boolean memoryCache, boolean diskCache) {
 
-        mReusableBitmaps = AndroidVersionsUtils.hasHoneycomb() ? Collections.synchronizedSet(new HashSet<SoftReference<Bitmap>>()) : null;
+        final boolean hasHoneycomb = AndroidVersionsUtils.hasHoneycomb();
+
+        mReusableBitmaps = hasHoneycomb ? Collections.synchronizedSet(new HashSet<SoftReference<Bitmap>>()) : null;
 
         mStorage = memoryCache ? new LruCache<String, BitmapDrawable>(mMemoryCacheSize) {
 
@@ -56,7 +58,7 @@ public class CacheHelper {
 
                 }
 
-                if (AndroidVersionsUtils.hasHoneycomb() && mReusableBitmaps != null && mReusableBitmaps.size() < 50) {
+                if (hasHoneycomb && mReusableBitmaps != null && mReusableBitmaps.size() < 50) {
 
                     mReusableBitmaps.add(new SoftReference<Bitmap>(oldValue.getBitmap()));
 
@@ -87,10 +89,7 @@ public class CacheHelper {
 
     protected BitmapDrawable getBitmapFromFileCache(Resources resources, String url) {
 
-        if (mDiscCache == null) {
-
-            return null;
-        }
+        if (mDiscCache == null) return null;
 
         Bitmap result = mDiscCache.get(url);
 
@@ -165,7 +164,7 @@ public class CacheHelper {
         }
     }
 
-    protected Bitmap getBitmapFromReusableSet(BitmapFactory.Options options) {
+    public Bitmap getBitmapFromReusableSet(BitmapFactory.Options options) {
 
         Bitmap bitmap = null;
 

@@ -164,7 +164,7 @@ public class CacheHelper {
         }
     }
 
-    public Bitmap getBitmapFromReusableSet(BitmapFactory.Options options) {
+    protected Bitmap getBitmapFromReusableSet(BitmapFactory.Options options) {
 
         Bitmap bitmap = null;
 

@@ -41,9 +41,9 @@ public class SuperImageLoader {
     private final Context mContext;
     private final Resources mResources;
 
-    private static CacheHelper mCacheHelper;
+    private CacheHelper mCacheHelper;
 
-    private final BitmapLoader mImageWorker;
+    private final BitmapLoader mBitmapLoader;
 
     private final Object mPauseWorkLock = new Object();
     private boolean mPauseWork = false;
@@ -58,16 +58,12 @@ public class SuperImageLoader {
         mFadeIn = builder.sFadeIn;
         mFadeInTime = builder.sFadeInTime;
 
-        mImageWorker = builder.sCustomLoader == null ? new DefaultImageWorker() : builder.sCustomLoader;
-
         mCacheHelper = new CacheHelper(mContext, builder.sMemoryCacheEnabled, builder.sDiscCacheEnabled);
         mCacheHelper.setDiscCacheSize(builder.sDiscCacheSize);
         mCacheHelper.setMemoryCacheSize(builder.sMemoryCacheSize);
 
-    }
-
-    public static CacheHelper getCacheHelper() {
-        return mCacheHelper;
+        mBitmapLoader = builder.sCustomLoader == null ? new DefaultBitmapLoader() : builder.sCustomLoader;
+        mBitmapLoader.setCacheHelper(mCacheHelper);
     }
 
     public void setPlaceholder(int resDrawableID) {
@@ -140,17 +136,9 @@ public class SuperImageLoader {
 
         Bitmap bitmap = null;
 
-        try {
+        if (NetworkHelper.checkConnection(mContext)) {
 
-            if (NetworkHelper.checkConnection(mContext)) {
-
-                bitmap = mImageWorker.loadBitmap(url, widthInPx, heightInPx);
-
-            }
-
-        } catch (IOException e) {
-
-            e.printStackTrace();
+            bitmap = mBitmapLoader.load(url, widthInPx, heightInPx);
 
         }
 
@@ -402,39 +390,32 @@ public class SuperImageLoader {
 
             Bitmap bitmap = null;
 
-            try {
 
-                if (NetworkHelper.checkConnection(mContext) && !isCancelled() && getAttachedImageView() != null) {
+            if (NetworkHelper.checkConnection(mContext) && !isCancelled() && getAttachedImageView() != null) {
 
-                    if (mParams != null) {
+                if (mParams != null) {
 
-                        mImageWorker.setParams(mParams);
-
-                    }
-
-                    bitmap = mImageWorker.loadBitmap(mUrl, mWidth, mHeight);
+                    mBitmapLoader.setParams(mParams);
 
                 }
 
-                if (bitmap != null) {
+                bitmap = mBitmapLoader.load(mUrl, mWidth, mHeight);
 
-                    if (AndroidVersionsUtils.hasHoneycomb() && bitmap.getConfig() != null) {
+            }
 
-                        bitmapDrawable = new BitmapDrawable(mResources, bitmap);
+            if (bitmap != null) {
 
-                    } else {
+                if (AndroidVersionsUtils.hasHoneycomb() && bitmap.getConfig() != null) {
 
-                        bitmapDrawable = new RecyclingBitmapDrawable(mResources, bitmap);
+                    bitmapDrawable = new BitmapDrawable(mResources, bitmap);
 
-                    }
+                } else {
 
-                    mCacheHelper.put(mUrl, bitmapDrawable);
+                    bitmapDrawable = new RecyclingBitmapDrawable(mResources, bitmap);
+
                 }
 
-            } catch (IOException e) {
-
-                Log.e(LOG_TAG, e.getMessage());
-
+                mCacheHelper.put(mUrl, bitmapDrawable);
             }
 
             return bitmapDrawable;

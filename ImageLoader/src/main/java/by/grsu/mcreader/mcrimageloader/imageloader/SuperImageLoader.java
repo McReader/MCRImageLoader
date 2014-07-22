@@ -141,8 +141,6 @@ public class SuperImageLoader {
             }
         }
 
-        Bitmap bitmap = null;
-
         BitmapFactory.Options options = new BitmapFactory.Options();
 
         byte[] buffer = mBitmapSourceLoader.getBitmapSource(url, widthInPx, heightInPx, options);
@@ -163,7 +161,7 @@ public class SuperImageLoader {
 
         }
 
-        bitmap = BitmapFactory.decodeByteArray(buffer, 0, buffer.length, options);
+        Bitmap bitmap = BitmapFactory.decodeByteArray(buffer, 0, buffer.length, options);
 
         if (bitmap != null) {
 

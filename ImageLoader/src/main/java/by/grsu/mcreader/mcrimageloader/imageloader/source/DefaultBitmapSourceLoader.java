@@ -1,4 +1,4 @@
-package by.grsu.mcreader.mcrimageloader.imageloader;
+package by.grsu.mcreader.mcrimageloader.imageloader.source;
 
 import android.graphics.BitmapFactory;
 import android.util.Log;
@@ -6,24 +6,25 @@ import android.util.Log;
 import java.io.IOException;
 import java.io.InputStream;
 
+import by.grsu.mcreader.mcrimageloader.imageloader.BaseBitmapSourceLoader;
 import by.grsu.mcreader.mcrimageloader.imageloader.http.HttpWorker;
 import by.grsu.mcreader.mcrimageloader.imageloader.utils.IOUtils;
 
 /**
  * Created by dzianis_roi on 21.07.2014.
  */
-public class DefaultBitmapSourceLoader extends BitmapSourceLoader {
+public class DefaultBitmapSourceLoader extends BaseBitmapSourceLoader {
 
     private static final String LOG_TAG = DefaultBitmapSourceLoader.class.getSimpleName();
 
     private HttpWorker mHttpWorker;
 
-    protected DefaultBitmapSourceLoader() {
+    public DefaultBitmapSourceLoader() {
         mHttpWorker = new HttpWorker();
     }
 
     @Override
-    protected byte[] getBuffer(String url, int width, int height, BitmapFactory.Options options) {
+    protected byte[] getBitmapSource(String url, int width, int height, BitmapFactory.Options options) {
 
         InputStream is = null;
 

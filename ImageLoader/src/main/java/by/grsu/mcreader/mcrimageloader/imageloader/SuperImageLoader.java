@@ -14,17 +14,14 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.widget.ImageView;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.lang.ref.WeakReference;
 
 import by.grsu.mcreader.mcrimageloader.imageloader.callback.ImageLoaderCallback;
 import by.grsu.mcreader.mcrimageloader.imageloader.drawable.AsyncBitmapDrawable;
 import by.grsu.mcreader.mcrimageloader.imageloader.drawable.RecyclingBitmapDrawable;
+import by.grsu.mcreader.mcrimageloader.imageloader.source.DefaultBitmapSourceLoader;
 import by.grsu.mcreader.mcrimageloader.imageloader.utils.AndroidVersionsUtils;
 import by.grsu.mcreader.mcrimageloader.imageloader.utils.BitmapSizeUtil;
-import by.grsu.mcreader.mcrimageloader.imageloader.utils.IOUtils;
-import by.grsu.mcreader.mcrimageloader.imageloader.utils.NetworkHelper;
 
 public class SuperImageLoader {
 
@@ -47,7 +44,7 @@ public class SuperImageLoader {
 
     private ImageCacher mImageCacher;
 
-    private final BitmapSourceLoader mBitmapSourceLoader;
+    private final BaseBitmapSourceLoader mBitmapSourceLoader;
 
     private final Object mPauseWorkLock = new Object();
     private boolean mPauseWork = false;
@@ -144,7 +141,7 @@ public class SuperImageLoader {
 
         BitmapFactory.Options options = new BitmapFactory.Options();
 
-        byte[] buffer = mBitmapSourceLoader.getBuffer(url, widthInPx, heightInPx, options);
+        byte[] buffer = mBitmapSourceLoader.getBitmapSource(url, widthInPx, heightInPx, options);
 
         options.inJustDecodeBounds = true;
 
@@ -426,7 +423,7 @@ public class SuperImageLoader {
 
                 BitmapFactory.Options options = new BitmapFactory.Options();
 
-                byte[] buffer = mBitmapSourceLoader.getBuffer(mUrl, mWidth, mHeight, options);
+                byte[] buffer = mBitmapSourceLoader.getBitmapSource(mUrl, mWidth, mHeight, options);
 
                 if (buffer == null || buffer.length <= 0) return null;
 
@@ -533,7 +530,7 @@ public class SuperImageLoader {
 
         private float sPartOfAvailableMemoryCache = -1;
 
-        private BitmapSourceLoader sCustomLoader;
+        private BaseBitmapSourceLoader sCustomLoader;
 
         public ImageLoaderBuilder(Context context) {
 
@@ -607,7 +604,7 @@ public class SuperImageLoader {
             return this;
         }
 
-        public ImageLoaderBuilder setCustomLoader(BitmapSourceLoader loader) {
+        public ImageLoaderBuilder setCustomLoader(BaseBitmapSourceLoader loader) {
 
             this.sCustomLoader = loader;
 

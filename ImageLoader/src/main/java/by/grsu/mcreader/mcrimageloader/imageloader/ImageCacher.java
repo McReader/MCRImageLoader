@@ -1,16 +1,17 @@
 package by.grsu.mcreader.mcrimageloader.imageloader;
 
 
-import android.app.ActivityManager;
-import android.content.Context;
+import android.annotation.TargetApi;
 import android.content.res.Resources;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
+import android.os.Build;
 import android.support.v4.util.LruCache;
 import android.text.TextUtils;
 import android.util.Log;
 
+import java.io.File;
 import java.lang.ref.SoftReference;
 import java.util.Collections;
 import java.util.HashSet;
@@ -20,13 +21,11 @@ import java.util.Set;
 import by.grsu.mcreader.mcrimageloader.imageloader.cache.LimitedDiscCache;
 import by.grsu.mcreader.mcrimageloader.imageloader.drawable.RecyclingBitmapDrawable;
 import by.grsu.mcreader.mcrimageloader.imageloader.utils.AndroidVersionsUtils;
+import by.grsu.mcreader.mcrimageloader.imageloader.utils.ReusableBitmapUtil;
 
-public class CacheHelper {
+public class ImageCacher {
 
-    protected static final String LOG_TAG = CacheHelper.class.getSimpleName();
-
-    private int mMemoryCacheSize = 2 * 1024 * 1024;// 2MB
-    private int mDiscCacheSize = 10 * 1024 * 1024; // 10MB
+    protected static final String LOG_TAG = ImageCacher.class.getSimpleName();
 
     private LruCache<String, BitmapDrawable> mStorage;
 
@@ -34,13 +33,21 @@ public class CacheHelper {
 
     private LimitedDiscCache mDiscCache;
 
-    protected CacheHelper(Context context, boolean memoryCache, boolean diskCache) {
+    protected ImageCacher(File cacheDir, boolean memoryCache, boolean diskCache, int memoryCacheSize, int discCacheSize) {
 
-        final boolean hasHoneycomb = AndroidVersionsUtils.hasHoneycomb();
+        mReusableBitmaps = AndroidVersionsUtils.hasHoneycomb() ? Collections.synchronizedSet(new HashSet<SoftReference<Bitmap>>()) : null;
 
-        mReusableBitmaps = hasHoneycomb ? Collections.synchronizedSet(new HashSet<SoftReference<Bitmap>>()) : null;
+        init(
+                cacheDir,
+                memoryCache,
+                diskCache,
+                memoryCacheSize > 1 * 1024 * 1024 ? memoryCacheSize : 5 * 1024 * 1024, // if > 1mb then apply non-default memory cache size
+                discCacheSize > 1 * 1024 * 1024 ? discCacheSize : 5 * 1024 * 1024); //if > 1mb then apply non-default disk cache size
+    }
 
-        mStorage = memoryCache ? new LruCache<String, BitmapDrawable>(mMemoryCacheSize) {
+    private void init(File cacheDir, boolean memoryCache, boolean diskCache, int memoryCacheSize, int discCacheSize) {
+
+        mStorage = memoryCache ? new LruCache<String, BitmapDrawable>(memoryCacheSize) {
 
             @Override
             protected int sizeOf(String key, BitmapDrawable value) {
@@ -58,33 +65,16 @@ public class CacheHelper {
 
                 }
 
-                if (hasHoneycomb && mReusableBitmaps != null && mReusableBitmaps.size() < 50) {
+                if (mReusableBitmaps != null) {
 
                     mReusableBitmaps.add(new SoftReference<Bitmap>(oldValue.getBitmap()));
 
                 }
+
             }
         } : null;
 
-        mDiscCache = diskCache ? new LimitedDiscCache(context.getCacheDir(), mDiscCacheSize) : null;
-    }
-
-    public void setDiscCacheSize(int discCacheSizeInBytes) {
-
-        mDiscCacheSize = discCacheSizeInBytes > 0 ? discCacheSizeInBytes : mDiscCacheSize;
-
-    }
-
-    public void setMemoryCacheSize(int memoryCacheSizeInBytes) {
-
-        mMemoryCacheSize = memoryCacheSizeInBytes > 0 ? memoryCacheSizeInBytes : mMemoryCacheSize;
-
-    }
-
-    public void setPartOfAvailableMemoryCache(Context context, float part) {
-
-        mMemoryCacheSize = part > 0f && part <= 1f ? Math.round(1024 * 1024 * part * ((ActivityManager) context.getSystemService(Context.ACTIVITY_SERVICE)).getMemoryClass()) : mMemoryCacheSize;
-
+        mDiscCache = diskCache ? new LimitedDiscCache(cacheDir, discCacheSize) : null;
     }
 
     protected BitmapDrawable getBitmapFromFileCache(Resources resources, String url) {
@@ -124,30 +114,19 @@ public class CacheHelper {
 
     protected void put(String url, BitmapDrawable value) {
 
-        if (mStorage != null) {
+        if (mStorage != null) putBitmapToMemoryCache(url, value);
 
-            putBitmapToMemoryCache(url, value);
+        if (mDiscCache != null) putBitmapToFileCache(url, value);
 
-        }
-
-        if (mDiscCache != null) {
-
-            putBitmapToFileCache(url, value);
-
-        }
     }
 
     protected void putBitmapToMemoryCache(String key, BitmapDrawable value) {
 
-        if (mStorage == null) {
-
-            return;
-
-        }
+        if (mStorage == null) return;
 
         if (TextUtils.isEmpty(key) || value == null) {
 
-            Log.w(LOG_TAG, "Cant't put bitmap to memory cache. Illegal arguments!");
+            Log.w(LOG_TAG, "Can't put bitmap to memory cache. Illegal arguments!");
 
             return;
         }
@@ -161,6 +140,21 @@ public class CacheHelper {
             }
 
             mStorage.put(key, value);
+        }
+    }
+
+    @TargetApi(Build.VERSION_CODES.HONEYCOMB)
+    void addInBitmapOptions(BitmapFactory.Options options) {
+
+        options.inMutable = true;
+
+        Bitmap inBitmap = getBitmapFromReusableSet(options);
+
+        if (inBitmap != null) {
+
+            Log.d(LOG_TAG, "Found bitmap to use for inBitmap");
+
+            options.inBitmap = inBitmap;
         }
     }
 
@@ -182,7 +176,7 @@ public class CacheHelper {
 
                     if (null != item && item.isMutable()) {
 
-                        if (canUseForInBitmap(item, options)) {
+                        if (ReusableBitmapUtil.canUseForInBitmap(item, options)) {
 
                             bitmap = item;
 
@@ -201,18 +195,5 @@ public class CacheHelper {
         }
 
         return bitmap;
-    }
-
-    protected static boolean canUseForInBitmap(Bitmap candidate, BitmapFactory.Options targetOptions) {
-
-        if (targetOptions.inSampleSize <= 0) {
-
-            return false;
-
-        }
-
-        int width = targetOptions.outWidth / targetOptions.inSampleSize, height = targetOptions.outHeight / targetOptions.inSampleSize;
-
-        return candidate.getWidth() == width && candidate.getHeight() == height && candidate.getConfig() == targetOptions.inPreferredConfig;
     }
 }

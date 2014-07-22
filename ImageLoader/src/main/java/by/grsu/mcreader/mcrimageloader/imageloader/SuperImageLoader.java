@@ -15,6 +15,7 @@ import android.util.Log;
 import android.widget.ImageView;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.ref.WeakReference;
 
 import by.grsu.mcreader.mcrimageloader.imageloader.callback.ImageLoaderCallback;
@@ -22,11 +23,14 @@ import by.grsu.mcreader.mcrimageloader.imageloader.drawable.AsyncBitmapDrawable;
 import by.grsu.mcreader.mcrimageloader.imageloader.drawable.RecyclingBitmapDrawable;
 import by.grsu.mcreader.mcrimageloader.imageloader.utils.AndroidVersionsUtils;
 import by.grsu.mcreader.mcrimageloader.imageloader.utils.BitmapSizeUtil;
+import by.grsu.mcreader.mcrimageloader.imageloader.utils.IOUtils;
 import by.grsu.mcreader.mcrimageloader.imageloader.utils.NetworkHelper;
 
 public class SuperImageLoader {
 
     private static final String LOG_TAG = SuperImageLoader.class.getSimpleName();
+
+    private static final String GIF = "image/gif";
 
     private boolean mFadeIn = true;
     private int mFadeInTime = 600; // Default fade in time
@@ -41,9 +45,9 @@ public class SuperImageLoader {
     private final Context mContext;
     private final Resources mResources;
 
-    private CacheHelper mCacheHelper;
+    private ImageCacher mImageCacher;
 
-    private final BitmapLoader mBitmapLoader;
+    private final BitmapSourceLoader mBitmapSourceLoader;
 
     private final Object mPauseWorkLock = new Object();
     private boolean mPauseWork = false;
@@ -58,12 +62,14 @@ public class SuperImageLoader {
         mFadeIn = builder.sFadeIn;
         mFadeInTime = builder.sFadeInTime;
 
-        mCacheHelper = new CacheHelper(mContext, builder.sMemoryCacheEnabled, builder.sDiscCacheEnabled);
-        mCacheHelper.setDiscCacheSize(builder.sDiscCacheSize);
-        mCacheHelper.setMemoryCacheSize(builder.sMemoryCacheSize);
+        mImageCacher = new ImageCacher(
+                mContext.getCacheDir(),
+                builder.sMemoryCacheEnabled,
+                builder.sDiscCacheEnabled,
+                builder.sMemoryCacheSize,
+                builder.sDiscCacheSize);
 
-        mBitmapLoader = builder.sCustomLoader == null ? new DefaultBitmapLoader() : builder.sCustomLoader;
-        mBitmapLoader.setCacheHelper(mCacheHelper);
+        mBitmapSourceLoader = builder.sCustomLoader == null ? new DefaultBitmapSourceLoader() : builder.sCustomLoader;
     }
 
     public void setPlaceholder(int resDrawableID) {
@@ -96,7 +102,7 @@ public class SuperImageLoader {
         widthInPx = widthInPx <= 0 ? DEFAULT_IMAGE_WIDTH : widthInPx;
         heightInPx = heightInPx <= 0 ? DEFAULT_IMAGE_HEIGHT : heightInPx;
 
-        BitmapDrawable bitmapDrawable = mCacheHelper.getBitmapFromMemoryCache(url);
+        BitmapDrawable bitmapDrawable = mImageCacher.getBitmapFromMemoryCache(url);
 
         if (bitmapDrawable != null) {
 
@@ -115,7 +121,7 @@ public class SuperImageLoader {
             }
         }
 
-        bitmapDrawable = mCacheHelper.getBitmapFromFileCache(mContext.getResources(), url);
+        bitmapDrawable = mImageCacher.getBitmapFromFileCache(mContext.getResources(), url);
 
         if (bitmapDrawable != null) {
 
@@ -136,11 +142,27 @@ public class SuperImageLoader {
 
         Bitmap bitmap = null;
 
-        if (NetworkHelper.checkConnection(mContext)) {
+        BitmapFactory.Options options = new BitmapFactory.Options();
 
-            bitmap = mBitmapLoader.load(url, widthInPx, heightInPx);
+        byte[] buffer = mBitmapSourceLoader.getBuffer(url, widthInPx, heightInPx, options);
+
+        options.inJustDecodeBounds = true;
+
+        BitmapFactory.decodeByteArray(buffer, 0, buffer.length, options);
+
+        options.inSampleSize = BitmapSizeUtil.calculateInSampleSize(options, widthInPx, heightInPx);
+
+        options.inJustDecodeBounds = false;
+
+        Log.d(LOG_TAG, String.format(" \ninput width = %s, \ninput height = %s \nsample size = %s \nformat = %s", options.outWidth, options.outHeight, options.inSampleSize, options.outMimeType));
+
+        if (AndroidVersionsUtils.hasHoneycomb() && !TextUtils.isEmpty(options.outMimeType) && !options.outMimeType.equals(GIF)) {
+
+            mImageCacher.addInBitmapOptions(options);
 
         }
+
+        bitmap = BitmapFactory.decodeByteArray(buffer, 0, buffer.length, options);
 
         if (bitmap != null) {
 
@@ -154,7 +176,7 @@ public class SuperImageLoader {
 
             }
 
-            mCacheHelper.put(url, bitmapDrawable);
+            mImageCacher.put(url, bitmapDrawable);
         }
 
         return bitmapDrawable;
@@ -196,18 +218,21 @@ public class SuperImageLoader {
 
         boolean careAboutSize = widthInPx > 0 && heightInPx > 0;
 
-        BitmapDrawable bitmapDrawable = mCacheHelper.getBitmapFromMemoryCache(url);
+        BitmapDrawable bitmapDrawable = mImageCacher.getBitmapFromMemoryCache(url);
 
         if (bitmapDrawable != null) {
 
-            if (careAboutSize && BitmapSizeUtil.inspectDimensions(bitmapDrawable, widthInPx, heightInPx)) {
+            // TODO: handle careAboutSize BitmapSizeUtil.inspectDimensions(bitmapDrawable, widthInPx, heightInPx)
 
-                imageView.setImageDrawable(bitmapDrawable);
+            imageView.setImageDrawable(bitmapDrawable);
 
-                if (callback != null) callback.onLoadingFinished(bitmapDrawable);
+            if (callback != null) callback.onLoadingFinished(bitmapDrawable);
 
-            }
-        } else if (cancelPotentialDownload(imageView, url)) {
+            return;
+
+        }
+
+        if (cancelPotentialDownload(imageView, url)) {
 
             ImageAsyncTask imageAsyncTask = new ImageAsyncTask(imageView, callback);
 
@@ -380,7 +405,7 @@ public class SuperImageLoader {
                 }
             }
 
-            BitmapDrawable bitmapDrawable = mCacheHelper.getBitmapFromFileCache(mContext.getResources(), mUrl);
+            BitmapDrawable bitmapDrawable = mImageCacher.getBitmapFromFileCache(mContext.getResources(), mUrl);
 
             if (bitmapDrawable != null) {
 
@@ -391,21 +416,45 @@ public class SuperImageLoader {
             Bitmap bitmap = null;
 
 
-            if (NetworkHelper.checkConnection(mContext) && !isCancelled() && getAttachedImageView() != null) {
+            if (!isCancelled() && getAttachedImageView() != null) {
 
                 if (mParams != null) {
 
-                    mBitmapLoader.setParams(mParams);
+                    mBitmapSourceLoader.setParams(mParams);
 
                 }
 
-                bitmap = mBitmapLoader.load(mUrl, mWidth, mHeight);
+                BitmapFactory.Options options = new BitmapFactory.Options();
+
+                byte[] buffer = mBitmapSourceLoader.getBuffer(mUrl, mWidth, mHeight, options);
+
+                if (buffer == null || buffer.length <= 0) return null;
+
+                options.inJustDecodeBounds = true;
+
+                BitmapFactory.decodeByteArray(buffer, 0, buffer.length, options);
+
+                options.inSampleSize = BitmapSizeUtil.calculateInSampleSize(options, mWidth, mHeight);
+
+                options.inJustDecodeBounds = false;
+
+                Log.d(LOG_TAG, String.format("Input bitmap: \nwidth = %s, \nheight = %s \nsample size = %s \nformat = %s", options.outWidth, options.outHeight, options.inSampleSize, options.outMimeType));
+
+                if (AndroidVersionsUtils.hasHoneycomb() && !TextUtils.isEmpty(options.outMimeType) && !options.outMimeType.equals(GIF)) {
+
+                    mImageCacher.addInBitmapOptions(options);
+
+                }
+
+                bitmap = BitmapFactory.decodeByteArray(buffer, 0, buffer.length, options);
 
             }
 
             if (bitmap != null) {
 
-                if (AndroidVersionsUtils.hasHoneycomb() && bitmap.getConfig() != null) {
+                Log.d(LOG_TAG, String.format("Result Bitmap: \nwidth = %s \n height = %s \nconfig = %s", bitmap.getWidth(), bitmap.getHeight(), bitmap.getConfig()));
+
+                if (AndroidVersionsUtils.hasHoneycomb()) {
 
                     bitmapDrawable = new BitmapDrawable(mResources, bitmap);
 
@@ -415,7 +464,7 @@ public class SuperImageLoader {
 
                 }
 
-                mCacheHelper.put(mUrl, bitmapDrawable);
+                mImageCacher.put(mUrl, bitmapDrawable);
             }
 
             return bitmapDrawable;
@@ -481,9 +530,10 @@ public class SuperImageLoader {
         private boolean sMemoryCacheEnabled, sDiscCacheEnabled;
 
         private int sDiscCacheSize = -1, sMemoryCacheSize = -1;
+
         private float sPartOfAvailableMemoryCache = -1;
 
-        private BitmapLoader sCustomLoader;
+        private BitmapSourceLoader sCustomLoader;
 
         public ImageLoaderBuilder(Context context) {
 
@@ -557,7 +607,7 @@ public class SuperImageLoader {
             return this;
         }
 
-        public ImageLoaderBuilder setCustomLoader(BitmapLoader loader) {
+        public ImageLoaderBuilder setCustomLoader(BitmapSourceLoader loader) {
 
             this.sCustomLoader = loader;
 

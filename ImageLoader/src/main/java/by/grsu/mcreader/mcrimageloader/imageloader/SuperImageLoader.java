@@ -85,6 +85,10 @@ public class SuperImageLoader {
         mFadeInTime = time;
     }
 
+    public BitmapDrawable loadBitmapSync(String url) {
+        return loadBitmapSync(url, 0, 0);
+    }
+
     public BitmapDrawable loadBitmapSync(String url, int widthInPx, int heightInPx) {
 
         if (TextUtils.isEmpty(url)) {
@@ -179,16 +183,12 @@ public class SuperImageLoader {
         return bitmapDrawable;
     }
 
-    public BitmapDrawable loadBitmapSync(String url) {
-        return loadBitmapSync(url, 0, 0);
-    }
-
     public void loadBitmap(ImageView imageView, String url) {
-        loadBitmap(imageView, url, 0, 0);
+        loadBitmap(imageView, url, 0, 0, null, null);
     }
 
     public void loadBitmap(ImageView imageView, String url, int widthInPx, int heightInPx) {
-        loadBitmap(imageView, url, widthInPx, heightInPx, null);
+        loadBitmap(imageView, url, widthInPx, heightInPx, null, null);
     }
 
     public void loadBitmap(ImageView imageView, String url, int widthInPx, int heightInPx, ImageLoaderCallback callback) {
@@ -196,7 +196,7 @@ public class SuperImageLoader {
     }
 
     public void loadBitmap(ImageView imageView, String url, ImageLoaderCallback callback) {
-        loadBitmap(imageView, url, 0, 0, callback);
+        loadBitmap(imageView, url, 0, 0, null, callback);
     }
 
     public void loadBitmap(ImageView imageView, String url, int widthInPx, int heightInPx, Bundle params, ImageLoaderCallback callback) {
@@ -213,7 +213,7 @@ public class SuperImageLoader {
             return;
         }
 
-        boolean careAboutSize = widthInPx > 0 && heightInPx > 0;
+//        boolean careAboutSize = widthInPx > 0 && heightInPx > 0;
 
         BitmapDrawable bitmapDrawable = mImageCacher.getBitmapFromMemoryCache(url);
 
@@ -425,7 +425,12 @@ public class SuperImageLoader {
 
                 byte[] buffer = mBitmapSourceLoader.getBitmapSource(mUrl, mWidth, mHeight, options);
 
-                if (buffer == null || buffer.length <= 0) return null;
+                if (buffer == null || buffer.length <= 0) {
+
+                    mCallback.onLoadingError(new IllegalArgumentException("Can't get image source!"), mUrl);
+
+                    return null;
+                }
 
                 options.inJustDecodeBounds = true;
 

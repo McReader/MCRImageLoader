@@ -37,7 +37,7 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
-import by.grsu.mcreader.mcrimageloader.imageloader.utils.AndroidVersionsUtils;
+import by.grsu.mcreader.mcrimageloader.imageloader.utils.AndroidVersions;
 
 /**
  * ************************************* Copied from JB release framework:
@@ -264,7 +264,7 @@ public abstract class AsyncTask<Params, Progress, Result> {
      * An {@link java.util.concurrent.Executor} that executes tasks one at a time in serial order.
      * This serialization is global to a particular process.
      */
-    public static final Executor SERIAL_EXECUTOR = AndroidVersionsUtils
+    public static final Executor SERIAL_EXECUTOR = AndroidVersions
             .hasHoneycomb() ? new SerialExecutor() : Executors
             .newSingleThreadExecutor(sThreadFactory);
 

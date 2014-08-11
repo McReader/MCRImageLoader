@@ -13,9 +13,7 @@ import by.grsu.mcreader.mcrimageloader.imageloader.utils.IOUtils;
 /**
  * Created by dzianis_roi on 21.07.2014.
  */
-public class DefaultBitmapSourceLoader extends BaseBitmapSourceLoader {
-
-    private static final String LOG_TAG = DefaultBitmapSourceLoader.class.getSimpleName();
+public class DefaultBitmapSourceLoader extends BaseBitmapSourceLoader<InputStream> {
 
     private HttpWorker mHttpWorker;
 
@@ -24,31 +22,9 @@ public class DefaultBitmapSourceLoader extends BaseBitmapSourceLoader {
     }
 
     @Override
-    protected byte[] getBitmapSource(String url, int width, int height, BitmapFactory.Options options) {
+    protected InputStream getSource(String url, BitmapFactory.Options options) {
 
-        InputStream is = null;
-
-        byte[] result = null;
-
-        try {
-
-            is = mHttpWorker.getStream(url);
-
-            result = new byte[is.available()];
-
-            is.read(result);
-
-        } catch (IOException e) {
-
-            Log.d(LOG_TAG, e.getMessage());
-
-        } finally {
-
-            IOUtils.closeStream(is);
-
-        }
-
-        return result;
+        return mHttpWorker.getStream(url);
 
     }
 }

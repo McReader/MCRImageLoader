@@ -1,22 +1,5 @@
 package by.grsu.mcreader.mcrimageloader.imageloader.features;
 
-import android.content.Context;
-import android.graphics.Bitmap;
-import android.graphics.Canvas;
-import android.graphics.drawable.BitmapDrawable;
-import android.text.TextUtils;
-import android.widget.ImageView;
-
-import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
-
-import by.grsu.mcreader.mcrimageloader.imageloader.drawable.AsyncBitmapDrawable;
-import by.grsu.mcreader.mcrimageloader.imageloader.SuperImageLoader;
-import by.grsu.mcreader.mcrimageloader.imageloader.drawable.RecyclingBitmapDrawable;
-import by.grsu.mcreader.mcrimageloader.imageloader.utils.AndroidVersionsUtils;
-import by.grsu.mcreader.mcrimageloader.imageloader.utils.NetworkHelper;
-
 public class ImageCombiner {
 
     private ImageCombiner() {

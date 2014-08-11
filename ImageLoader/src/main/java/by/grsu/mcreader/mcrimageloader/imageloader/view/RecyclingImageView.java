@@ -21,6 +21,7 @@ public class RecyclingImageView extends ImageView {
     @Override
     protected void onDetachedFromWindow() {
         setImageDrawable(null);
+
         super.onDetachedFromWindow();
     }
 
@@ -32,7 +33,7 @@ public class RecyclingImageView extends ImageView {
         super.setImageDrawable(drawable);
 
         notifyDrawable(drawable, true);
-        
+
         notifyDrawable(previousDrawable, false);
     }
 

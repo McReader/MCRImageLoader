@@ -27,12 +27,18 @@ public class RecyclingBitmapDrawable extends BitmapDrawable {
      * @param isDisplayed - Whether the drawable is being displayed or not
      */
     public void setIsDisplayed(boolean isDisplayed) {
+
         synchronized (this) {
+
             if (isDisplayed) {
+
                 mDisplayRefCount++;
                 mHasBeenDisplayed = true;
+
             } else {
+
                 mDisplayRefCount--;
+
             }
         }
 
@@ -47,11 +53,17 @@ public class RecyclingBitmapDrawable extends BitmapDrawable {
      * @param isCached - Whether the drawable is being cached or not
      */
     public void setIsCached(boolean isCached) {
+
         synchronized (this) {
+
             if (isCached) {
+
                 mCacheRefCount++;
+
             } else {
+
                 mCacheRefCount--;
+
             }
         }
 
@@ -62,17 +74,18 @@ public class RecyclingBitmapDrawable extends BitmapDrawable {
     private synchronized void checkState() {
         // If the drawable cache and display ref counts = 0, and this drawable
         // has been displayed, then recycle
-        if (mCacheRefCount <= 0 && mDisplayRefCount <= 0 && mHasBeenDisplayed
-                && hasValidBitmap()) {
+        if (mCacheRefCount <= 0 && mDisplayRefCount <= 0 && mHasBeenDisplayed && hasValidBitmap()) {
 
             if (BuildConfig.DEBUG) {
 
                 Log.d(LOG_TAG, "No longer being used or cached so recycling. "
                         + toString());
-                
+
             }
 
             getBitmap().recycle();
+
+            setCallback(null);
         }
     }
 

@@ -20,7 +20,7 @@ import java.util.Set;
 
 import by.grsu.mcreader.mcrimageloader.imageloader.cache.LimitedDiscCache;
 import by.grsu.mcreader.mcrimageloader.imageloader.drawable.RecyclingBitmapDrawable;
-import by.grsu.mcreader.mcrimageloader.imageloader.utils.AndroidVersionsUtils;
+import by.grsu.mcreader.mcrimageloader.imageloader.utils.AndroidVersions;
 import by.grsu.mcreader.mcrimageloader.imageloader.utils.ReusableBitmapUtil;
 
 public class ImageCacher {
@@ -35,7 +35,7 @@ public class ImageCacher {
 
     protected ImageCacher(File cacheDir, boolean memoryCache, boolean diskCache, int memoryCacheSize, int discCacheSize) {
 
-        mReusableBitmaps = AndroidVersionsUtils.hasHoneycomb() ? Collections.synchronizedSet(new HashSet<SoftReference<Bitmap>>()) : null;
+        mReusableBitmaps = AndroidVersions.hasHoneycomb() ? Collections.synchronizedSet(new HashSet<SoftReference<Bitmap>>()) : null;
 
         init(
                 cacheDir,
@@ -52,25 +52,26 @@ public class ImageCacher {
             @Override
             protected int sizeOf(String key, BitmapDrawable value) {
 
-                return value.getBitmap().getRowBytes() * value.getBitmap().getHeight();
+                return value == null ? 0 : ReusableBitmapUtil.byteSizeOf(value.getBitmap());
 
             }
 
             @Override
-            protected void entryRemoved(boolean evicted, String key, BitmapDrawable oldValue, BitmapDrawable newValue) {
+            protected void entryRemoved(boolean evicted, String key, BitmapDrawable
+                    oldValue, BitmapDrawable newValue) {
 
                 if (RecyclingBitmapDrawable.class.isInstance(oldValue)) {
 
                     ((RecyclingBitmapDrawable) oldValue).setIsCached(false);
 
+                } else {
+
+                    if (mReusableBitmaps != null) {
+
+                        mReusableBitmaps.add(new SoftReference<Bitmap>(oldValue.getBitmap()));
+
+                    }
                 }
-
-                if (mReusableBitmaps != null) {
-
-                    mReusableBitmaps.add(new SoftReference<Bitmap>(oldValue.getBitmap()));
-
-                }
-
             }
         } : null;
 
@@ -83,7 +84,7 @@ public class ImageCacher {
 
         Bitmap result = mDiscCache.get(url);
 
-        BitmapDrawable drawable = result == null ? null : AndroidVersionsUtils.hasHoneycomb() ? new BitmapDrawable(resources, result) : new RecyclingBitmapDrawable(resources, result);
+        BitmapDrawable drawable = result == null ? null : AndroidVersions.hasHoneycomb() ? new BitmapDrawable(resources, result) : new RecyclingBitmapDrawable(resources, result);
 
         if (mStorage != null) {
 
@@ -159,41 +160,33 @@ public class ImageCacher {
     }
 
     protected Bitmap getBitmapFromReusableSet(BitmapFactory.Options options) {
-
         Bitmap bitmap = null;
 
-        if (mReusableBitmaps != null) {
-
+        if (mReusableBitmaps != null && !mReusableBitmaps.isEmpty()) {
             synchronized (mReusableBitmaps) {
-
-                final Iterator<SoftReference<Bitmap>> iterator = mReusableBitmaps.iterator();
-
+                final Iterator<SoftReference<Bitmap>> iterator
+                        = mReusableBitmaps.iterator();
                 Bitmap item;
 
                 while (iterator.hasNext()) {
-
                     item = iterator.next().get();
 
                     if (null != item && item.isMutable()) {
-
+                        // Check to see it the item can be used for inBitmap.
                         if (ReusableBitmapUtil.canUseForInBitmap(item, options)) {
-
                             bitmap = item;
 
+                            // Remove from reusable set so it can't be used again.
                             iterator.remove();
-
                             break;
                         }
-
                     } else {
-
+                        // Remove from the set if the reference has been cleared.
                         iterator.remove();
-
                     }
                 }
             }
         }
-
         return bitmap;
     }
 }

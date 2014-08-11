@@ -29,13 +29,13 @@ public class ImageCacher {
 
     private LruCache<String, BitmapDrawable> mStorage;
 
-    private final Set<SoftReference<Bitmap>> mReusableBitmaps;
+//    private final Set<SoftReference<Bitmap>> mReusableBitmaps;
 
     private LimitedDiscCache mDiscCache;
 
     protected ImageCacher(File cacheDir, boolean memoryCache, boolean diskCache, int memoryCacheSize, int discCacheSize) {
 
-        mReusableBitmaps = AndroidVersions.hasHoneycomb() ? Collections.synchronizedSet(new HashSet<SoftReference<Bitmap>>()) : null;
+//        mReusableBitmaps = AndroidVersions.hasHoneycomb() ? Collections.synchronizedSet(new HashSet<SoftReference<Bitmap>>()) : null;
 
         init(
                 cacheDir,
@@ -66,11 +66,11 @@ public class ImageCacher {
 
                 } else {
 
-                    if (mReusableBitmaps != null) {
-
-                        mReusableBitmaps.add(new SoftReference<Bitmap>(oldValue.getBitmap()));
-
-                    }
+//                    if (mReusableBitmaps != null) {
+//
+//                        mReusableBitmaps.add(new SoftReference<Bitmap>(oldValue.getBitmap()));
+//
+//                    }
                 }
             }
         } : null;
@@ -144,49 +144,49 @@ public class ImageCacher {
         }
     }
 
-    @TargetApi(Build.VERSION_CODES.HONEYCOMB)
-    void addInBitmapOptions(BitmapFactory.Options options) {
+//    @TargetApi(Build.VERSION_CODES.HONEYCOMB)
+//    void addInBitmapOptions(BitmapFactory.Options options) {
+//
+//        options.inMutable = true;
+//
+//        Bitmap inBitmap = getBitmapFromReusableSet(options);
+//
+//        if (inBitmap != null) {
+//
+//            Log.d(LOG_TAG, "Found bitmap to use for inBitmap");
+//
+//            options.inBitmap = inBitmap;
+//        }
+//    }
 
-        options.inMutable = true;
-
-        Bitmap inBitmap = getBitmapFromReusableSet(options);
-
-        if (inBitmap != null) {
-
-            Log.d(LOG_TAG, "Found bitmap to use for inBitmap");
-
-            options.inBitmap = inBitmap;
-        }
-    }
-
-    protected Bitmap getBitmapFromReusableSet(BitmapFactory.Options options) {
-        Bitmap bitmap = null;
-
-        if (mReusableBitmaps != null && !mReusableBitmaps.isEmpty()) {
-            synchronized (mReusableBitmaps) {
-                final Iterator<SoftReference<Bitmap>> iterator
-                        = mReusableBitmaps.iterator();
-                Bitmap item;
-
-                while (iterator.hasNext()) {
-                    item = iterator.next().get();
-
-                    if (null != item && item.isMutable()) {
-                        // Check to see it the item can be used for inBitmap.
-                        if (ReusableBitmapUtil.canUseForInBitmap(item, options)) {
-                            bitmap = item;
-
-                            // Remove from reusable set so it can't be used again.
-                            iterator.remove();
-                            break;
-                        }
-                    } else {
-                        // Remove from the set if the reference has been cleared.
-                        iterator.remove();
-                    }
-                }
-            }
-        }
-        return bitmap;
-    }
+//    protected Bitmap getBitmapFromReusableSet(BitmapFactory.Options options) {
+//        Bitmap bitmap = null;
+//
+//        if (mReusableBitmaps != null && !mReusableBitmaps.isEmpty()) {
+//            synchronized (mReusableBitmaps) {
+//                final Iterator<SoftReference<Bitmap>> iterator
+//                        = mReusableBitmaps.iterator();
+//                Bitmap item;
+//
+//                while (iterator.hasNext()) {
+//                    item = iterator.next().get();
+//
+//                    if (null != item && item.isMutable()) {
+//                        // Check to see it the item can be used for inBitmap.
+//                        if (ReusableBitmapUtil.canUseForInBitmap(item, options)) {
+//                            bitmap = item;
+//
+//                            // Remove from reusable set so it can't be used again.
+//                            iterator.remove();
+//                            break;
+//                        }
+//                    } else {
+//                        // Remove from the set if the reference has been cleared.
+//                        iterator.remove();
+//                    }
+//                }
+//            }
+//        }
+//        return bitmap;
+//    }
 }

@@ -2,7 +2,10 @@ package by.grsu.mcreader.mcrimageloader.imageloader;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.graphics.Matrix;
+import android.media.ExifInterface;
 import android.os.Bundle;
+import android.text.TextUtils;
 import android.util.Log;
 
 import java.io.File;
@@ -19,6 +22,12 @@ import by.grsu.mcreader.mcrimageloader.imageloader.utils.IOUtils;
  */
 public abstract class BaseBitmapSourceLoader<ResultSource> {
 
+    private static final String TAG = BaseBitmapSourceLoader.class.getSimpleName();
+
+    private boolean mDispatchOrientation = true;
+
+    private Integer mRotationDegree = null;
+
     private Bundle mParams;
 
     protected Bitmap getBitmap(String url, int width, int height) {
@@ -27,31 +36,35 @@ public abstract class BaseBitmapSourceLoader<ResultSource> {
 
         ResultSource source = getSource(url, options);
 
+        Bitmap result;
+
         if (source == null) return null;
 
         options.inJustDecodeBounds = true;
 
         if (source instanceof FileInputStream) {
 
-            return decodeFileInputStream((FileInputStream) source, width, height, options);
+            result = decodeFileInputStream((FileInputStream) source, width, height, options);
 
         } else if (source instanceof InputStream) {
 
-            return decodeInputStream((InputStream) source, width, height, options);
+            result = decodeInputStream((InputStream) source, width, height, options);
 
         } else if (source instanceof File) {
 
-            return decodeFile(((File) source), url, width, height, options);
+            result = decodeFile(url, width, height, options);
 
         } else if (source instanceof FileDescriptor) {
 
-            return decodeFileDescriptor(((FileDescriptor) source), width, height, options);
+            result = decodeFileDescriptor(((FileDescriptor) source), width, height, options);
 
         } else {
 
-            return decodeByteArray(((byte[]) source), url, width, height, options);
+            result = decodeByteArray(((byte[]) source), width, height, options);
 
         }
+
+        return mRotationDegree == null ? dispatchOrientation(result, url) : rotate(result, mRotationDegree);
     }
 
     private Bitmap decodeFileInputStream(FileInputStream source, int width, int height, BitmapFactory.Options options) {
@@ -72,8 +85,8 @@ public abstract class BaseBitmapSourceLoader<ResultSource> {
 
         } catch (IOException e) {
 
-            e.printStackTrace();
-            // TODO
+            Log.e(TAG, TextUtils.isEmpty(e.getMessage()) ? "Error decodeFileInputStream" : e.getMessage());
+
         } finally {
 
             IOUtils.closeStream(source);
@@ -103,8 +116,8 @@ public abstract class BaseBitmapSourceLoader<ResultSource> {
 
         } catch (IOException e) {
 
-            e.printStackTrace();
-            // TODO
+            Log.e(TAG, TextUtils.isEmpty(e.getMessage()) ? "Error decodeInputStream" : e.getMessage());
+
         } finally {
 
             IOUtils.closeStream(source);
@@ -114,8 +127,14 @@ public abstract class BaseBitmapSourceLoader<ResultSource> {
         return result;
     }
 
-    private Bitmap decodeFile(File source, String url, int width, int height, BitmapFactory.Options options) {
-        return null;
+    private Bitmap decodeFile(String url, int width, int height, BitmapFactory.Options options) {
+        BitmapFactory.decodeFile(url, options);
+
+        options.inSampleSize = BitmapSizeUtil.calculateInSampleSize(options, width, height);
+
+        options.inJustDecodeBounds = false;
+
+        return BitmapFactory.decodeFile(url, options);
     }
 
     private Bitmap decodeFileDescriptor(FileDescriptor source, int width, int height, BitmapFactory.Options options) {
@@ -130,19 +149,76 @@ public abstract class BaseBitmapSourceLoader<ResultSource> {
 
     }
 
-    private Bitmap decodeByteArray(byte[] source, String url, int width, int height, BitmapFactory.Options options) {
+    private Bitmap decodeByteArray(byte[] source, int width, int height, BitmapFactory.Options options) {
 
         BitmapFactory.decodeByteArray(source, 0, source.length, options);
+
+        options.inSampleSize = BitmapSizeUtil.calculateInSampleSize(options, width, height);
 
         options.inJustDecodeBounds = false;
 
         return BitmapFactory.decodeByteArray(source, 0, source.length, options);
     }
 
+    private Bitmap dispatchOrientation(Bitmap bitmap, String path) {
+
+        if (bitmap == null || TextUtils.isEmpty(path)) return bitmap;
+
+        try {
+
+            ExifInterface exif = new ExifInterface(path);
+
+            String orientation = exif.getAttribute(ExifInterface.TAG_ORIENTATION);
+
+            Log.d("EXIF value", orientation);
+
+            int degree = 0;
+
+            if (orientation.equalsIgnoreCase("6")) {
+                degree = 90;
+            } else if (orientation.equalsIgnoreCase("8")) {
+                degree = 270;
+            } else if (orientation.equalsIgnoreCase("3")) {
+                degree = 180;
+            }
+
+            return rotate(bitmap, degree);
+
+        } catch (IOException e) {
+
+            Log.e(TAG, TextUtils.isEmpty(e.getMessage()) ? "Error dispatchOrientation" : e.getMessage());
+
+        }
+
+        return bitmap;
+    }
+
+    private Bitmap rotate(Bitmap target, Integer degree) {
+
+        if (degree != null) {
+
+            Matrix mtx = new Matrix();
+
+            mtx.postRotate(degree);
+
+            return Bitmap.createBitmap(target, 0, 0, target.getWidth(), target.getHeight(), mtx, true);
+        }
+
+        return target;
+    }
+
     protected abstract ResultSource getSource(String url, BitmapFactory.Options options);
 
     public void setParams(Bundle params) {
         this.mParams = params;
+    }
+
+    public void setDispatchOrientation(boolean dispatchOrientation) {
+        this.mDispatchOrientation = dispatchOrientation;
+    }
+
+    public void setRotationDegree(Integer rotationDegree) {
+        this.mRotationDegree = rotationDegree;
     }
 
     public Bundle getParams() {

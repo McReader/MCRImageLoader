@@ -24,10 +24,6 @@ public abstract class BaseBitmapSourceLoader<ResultSource> {
 
     private static final String TAG = BaseBitmapSourceLoader.class.getSimpleName();
 
-    private boolean mDispatchOrientation = true;
-
-    private Integer mRotationDegree = null;
-
     private Bundle mParams;
 
     protected Bitmap getBitmap(String url, int width, int height) {
@@ -36,9 +32,11 @@ public abstract class BaseBitmapSourceLoader<ResultSource> {
 
         ResultSource source = getSource(url, options);
 
+        if (source == null) return null;
+
         Bitmap result;
 
-        if (source == null) return null;
+        int rotationDegree = getRotationDegree(url);
 
         options.inJustDecodeBounds = true;
 
@@ -64,7 +62,7 @@ public abstract class BaseBitmapSourceLoader<ResultSource> {
 
         }
 
-        return mRotationDegree == null ? dispatchOrientation(result, url) : rotate(result, mRotationDegree);
+        return rotationDegree != -1 ? rotate(result, rotationDegree) : result;
     }
 
     private Bitmap decodeFileInputStream(FileInputStream source, int width, int height, BitmapFactory.Options options) {
@@ -160,9 +158,9 @@ public abstract class BaseBitmapSourceLoader<ResultSource> {
         return BitmapFactory.decodeByteArray(source, 0, source.length, options);
     }
 
-    private Bitmap dispatchOrientation(Bitmap bitmap, String path) {
+    protected int defineRotationDegree(String path) {
 
-        if (bitmap == null || TextUtils.isEmpty(path)) return bitmap;
+        if (TextUtils.isEmpty(path)) return -1;
 
         try {
 
@@ -182,15 +180,15 @@ public abstract class BaseBitmapSourceLoader<ResultSource> {
                 degree = 180;
             }
 
-            return rotate(bitmap, degree);
+            return degree;
 
         } catch (IOException e) {
 
-            Log.e(TAG, TextUtils.isEmpty(e.getMessage()) ? "Error dispatchOrientation" : e.getMessage());
+            Log.e(TAG, TextUtils.isEmpty(e.getMessage()) ? "Error defineRotationDegree" : e.getMessage());
 
         }
 
-        return bitmap;
+        return -1;
     }
 
     private Bitmap rotate(Bitmap target, Integer degree) {
@@ -209,16 +207,12 @@ public abstract class BaseBitmapSourceLoader<ResultSource> {
 
     protected abstract ResultSource getSource(String url, BitmapFactory.Options options);
 
+    protected int getRotationDegree(String url) {
+        return -1;
+    }
+
     public void setParams(Bundle params) {
         this.mParams = params;
-    }
-
-    public void setDispatchOrientation(boolean dispatchOrientation) {
-        this.mDispatchOrientation = dispatchOrientation;
-    }
-
-    public void setRotationDegree(Integer rotationDegree) {
-        this.mRotationDegree = rotationDegree;
     }
 
     public Bundle getParams() {

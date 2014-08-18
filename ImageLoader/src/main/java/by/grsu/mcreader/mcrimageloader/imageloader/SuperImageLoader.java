@@ -28,11 +28,8 @@ public class SuperImageLoader {
 
     private static final String LOG_TAG = SuperImageLoader.class.getSimpleName();
 
-    private static final String JPEG = "image/jpeg";
-    private static final String PNG = "image/png";
-
     private boolean mFadeIn = true;
-    private int mFadeInTime = 600; // Default fade in time
+    private int mFadeInTime = 100; // Default fade in time
 
     private final static int DEFAULT_IMAGE_WIDTH = 300;
     private final static int DEFAULT_IMAGE_HEIGHT = 300;
@@ -241,9 +238,9 @@ public class SuperImageLoader {
 
         if (cancelPotentialDownload(imageView, url)) {
 
-            ImageAsyncTask imageAsyncTask = new ImageAsyncTask(imageView, callback);
+            ImageAsyncTask imageAsyncTask = new ImageAsyncTask(imageView, callback, params);
 
-            imageAsyncTask.setParams(params);
+//            imageAsyncTask.setParams(params);
 
             AsyncBitmapDrawable asyncbitmapDrawable = new AsyncBitmapDrawable(mResources, mPlaceholderBitmap, imageAsyncTask);
 
@@ -365,11 +362,13 @@ public class SuperImageLoader {
 
         private Bundle mParams;
 
-        public ImageAsyncTask(ImageView imageView, ImageLoaderCallback callback) {
+        public ImageAsyncTask(ImageView imageView, ImageLoaderCallback callback, Bundle extra) {
 
             mImageViewReference = new WeakReference<ImageView>(imageView);
 
             mCallback = callback;
+
+            mParams = extra;
 
         }
 
@@ -379,9 +378,9 @@ public class SuperImageLoader {
 
         }
 
-        public void setParams(Bundle params) {
-            mParams = params;
-        }
+//        public void setParams(Bundle params) {
+//            mParams = params;
+//        }
 
         public void start(String url, int width, int height) {
 

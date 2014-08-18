@@ -168,8 +168,6 @@ public abstract class BaseBitmapSourceLoader<ResultSource> {
 
             String orientation = exif.getAttribute(ExifInterface.TAG_ORIENTATION);
 
-            Log.d("EXIF value", orientation);
-
             int degree = 0;
 
             if (orientation.equalsIgnoreCase("6")) {

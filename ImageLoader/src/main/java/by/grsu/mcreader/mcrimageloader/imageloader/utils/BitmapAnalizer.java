@@ -3,10 +3,51 @@ package by.grsu.mcreader.mcrimageloader.imageloader.utils;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
+import android.media.ExifInterface;
+import android.text.TextUtils;
+import android.util.Log;
 
-public class BitmapSizeUtil {
+import java.io.IOException;
 
-    private BitmapSizeUtil() {
+/**
+ * Created by Dzianis_Roi on 20.08.2014.
+ */
+public class BitmapAnalizer {
+
+    private static final String TAG = BitmapAnalizer.class.getSimpleName();
+
+    private BitmapAnalizer() {
+    }
+
+    public static int analizRotationDegree(String path) {
+
+        if (TextUtils.isEmpty(path)) return -1;
+
+        try {
+
+            ExifInterface exif = new ExifInterface(path);
+
+            String orientation = exif.getAttribute(ExifInterface.TAG_ORIENTATION);
+
+            int degree = 0;
+
+            if (orientation.equalsIgnoreCase("6")) {
+                degree = 90;
+            } else if (orientation.equalsIgnoreCase("8")) {
+                degree = 270;
+            } else if (orientation.equalsIgnoreCase("3")) {
+                degree = 180;
+            }
+
+            return degree;
+
+        } catch (IOException e) {
+
+            Log.e(TAG, TextUtils.isEmpty(e.getMessage()) ? "Error defineRotationDegree" : e.getMessage());
+
+        }
+
+        return -1;
     }
 
     public static boolean inspectDimensions(BitmapDrawable drawable, int requiredWidth, int requiredHeight) {

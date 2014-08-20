@@ -14,7 +14,6 @@ import android.text.TextUtils;
 import android.util.Log;
 import android.widget.ImageView;
 
-import java.io.FileDescriptor;
 import java.lang.ref.WeakReference;
 
 import by.grsu.mcreader.mcrimageloader.imageloader.callback.ImageLoaderCallback;
@@ -22,14 +21,14 @@ import by.grsu.mcreader.mcrimageloader.imageloader.drawable.AsyncBitmapDrawable;
 import by.grsu.mcreader.mcrimageloader.imageloader.drawable.RecyclingBitmapDrawable;
 import by.grsu.mcreader.mcrimageloader.imageloader.source.DefaultBitmapSourceLoader;
 import by.grsu.mcreader.mcrimageloader.imageloader.utils.AndroidVersions;
-import by.grsu.mcreader.mcrimageloader.imageloader.utils.BitmapSizeUtil;
+import by.grsu.mcreader.mcrimageloader.imageloader.utils.BitmapAnalizer;
 
 public class SuperImageLoader {
 
     private static final String LOG_TAG = SuperImageLoader.class.getSimpleName();
 
     private boolean mFadeIn = true;
-    private int mFadeInTime = 100; // Default fade in time
+    private int mFadeInTime; // Default fade in time
 
     private final static int DEFAULT_IMAGE_WIDTH = 300;
     private final static int DEFAULT_IMAGE_HEIGHT = 300;
@@ -53,7 +52,7 @@ public class SuperImageLoader {
         mContext = builder.sContext;
         mResources = builder.sResources;
 
-        mPlaceholderBitmap = builder.sPlaceHolderImage;
+        mPlaceholderBitmap = builder.sPlaceholder;
 
         mFadeIn = builder.sFadeIn;
         mFadeInTime = builder.sFadeInTime;
@@ -69,17 +68,13 @@ public class SuperImageLoader {
     }
 
     public void setBitmapSourceLoader(BaseBitmapSourceLoader bitmapSourceLoader) {
-
         if (this.mBitmapSourceLoader == bitmapSourceLoader) return;
 
         this.mBitmapSourceLoader = bitmapSourceLoader == null ? new DefaultBitmapSourceLoader() : bitmapSourceLoader;
-
     }
 
     public void setPlaceholder(int resDrawableID) {
-
         setPlaceholder(BitmapFactory.decodeResource(mResources, resDrawableID));
-
     }
 
     public void setPlaceholder(Bitmap bitmap) {
@@ -95,97 +90,87 @@ public class SuperImageLoader {
     }
 
     public BitmapDrawable loadBitmapSync(String url) {
-        return loadBitmapSync(url, 0, 0);
+        return loadBitmapSync(url, 0, 0, null);
     }
 
-    public BitmapDrawable loadBitmapSync(String url, int widthInPx, int heightInPx) {
+    public BitmapDrawable loadBitmapSync(String url, Bundle extra) {
+        return loadBitmapSync(url, 0, 0, extra);
+    }
 
-//        if (TextUtils.isEmpty(url)) {
-//
-//            Log.e(LOG_TAG, "Empty url!");
-//
-//            return null;
-//        }
-//
-//        boolean careAboutSize = widthInPx > 0 || heightInPx > 0;
-//
-//        widthInPx = widthInPx <= 0 ? DEFAULT_IMAGE_WIDTH : widthInPx;
-//        heightInPx = heightInPx <= 0 ? DEFAULT_IMAGE_HEIGHT : heightInPx;
-//
+    public BitmapDrawable loadBitmapSync(String url, int widthInPx, int heightInPx, Bundle extra) {
+
+        if (TextUtils.isEmpty(url)) {
+
+            Log.e(LOG_TAG, "Empty url!");
+
+            return null;
+        }
+
+        boolean careAboutSize = widthInPx > 0 || heightInPx > 0;
+
+        widthInPx = widthInPx <= 0 ? DEFAULT_IMAGE_WIDTH : widthInPx;
+        heightInPx = heightInPx <= 0 ? DEFAULT_IMAGE_HEIGHT : heightInPx;
+
         BitmapDrawable bitmapDrawable = mImageCacher.getBitmapFromMemoryCache(url);
-//
-//        if (bitmapDrawable != null) {
-//
-//            if (careAboutSize) {
-//
-//                if (BitmapSizeUtil.inspectDimensions(bitmapDrawable, widthInPx, heightInPx)) {
-//
-//                    return bitmapDrawable;
-//
-//                }
-//
-//            } else {
-//
-//                return bitmapDrawable;
-//
-//            }
-//        }
-//
-//        bitmapDrawable = mImageCacher.getBitmapFromFileCache(mContext.getResources(), url);
-//
-//        if (bitmapDrawable != null) {
-//
-//            if (careAboutSize) {
-//
-//                if (BitmapSizeUtil.inspectDimensions(bitmapDrawable, widthInPx, heightInPx)) {
-//
-//                    return bitmapDrawable;
-//
-//                }
-//
-//            } else {
-//
-//                return bitmapDrawable;
-//
-//            }
-//        }
-//
-//        BitmapFactory.Options options = new BitmapFactory.Options();
-//
-//        byte[] buffer = mBitmapSourceLoader.getBitmapSource(url, widthInPx, heightInPx, options);
-//
-//        options.inJustDecodeBounds = true;
-//
-//        BitmapFactory.decodeByteArray(buffer, 0, buffer.length, options);
-//
-//        options.inSampleSize = BitmapSizeUtil.calculateInSampleSize(options, widthInPx, heightInPx);
-//
-//        options.inJustDecodeBounds = false;
-//
-//        Log.d(LOG_TAG, String.format(" \ninput width = %s, \ninput height = %s \nsample size = %s \nformat = %s", options.outWidth, options.outHeight, options.inSampleSize, options.outMimeType));
-//
+
+        if (bitmapDrawable != null) {
+
+            if (careAboutSize) {
+
+                if (BitmapAnalizer.inspectDimensions(bitmapDrawable, widthInPx, heightInPx)) {
+
+                    return bitmapDrawable;
+
+                }
+
+            } else {
+
+                return bitmapDrawable;
+
+            }
+        }
+
+        bitmapDrawable = mImageCacher.getBitmapFromFileCache(mContext.getResources(), url);
+
+        if (bitmapDrawable != null) {
+
+            if (careAboutSize) {
+
+                if (BitmapAnalizer.inspectDimensions(bitmapDrawable, widthInPx, heightInPx)) {
+
+                    return bitmapDrawable;
+
+                }
+
+            } else {
+
+                return bitmapDrawable;
+
+            }
+        }
+
 //        if (AndroidVersions.hasHoneycomb() && !TextUtils.isEmpty(options.outMimeType) && (options.outMimeType.equals(JPEG) || options.outMimeType.equals(PNG))) {
 //
 //            mImageCacher.addInBitmapOptions(options);
 //
 //        }
-//
-//        Bitmap bitmap = BitmapFactory.decodeByteArray(buffer, 0, buffer.length, options);
-//
-//        if (bitmap != null) {
-//
+
+        Bitmap bitmap = mBitmapSourceLoader.getBitmap(url, widthInPx, heightInPx, extra);
+
+        if (bitmap != null) {
+
 //            if (AndroidVersions.hasHoneycomb() && bitmap.getConfig() != null) {
 //
 //                bitmapDrawable = new BitmapDrawable(mResources, bitmap);
 //
 //            } else {
-//
-//                bitmapDrawable = new RecyclingBitmapDrawable(mResources, bitmap);
-//
+
+            bitmapDrawable = new RecyclingBitmapDrawable(mResources, bitmap);
+
 //            }
-//
-//            mImageCacher.put(url, bitmapDrawable);
-//        }
+
+            mImageCacher.put(url, bitmapDrawable);
+        }
 
         return bitmapDrawable;
     }
@@ -238,9 +223,7 @@ public class SuperImageLoader {
 
         if (cancelPotentialDownload(imageView, url)) {
 
-            ImageAsyncTask imageAsyncTask = new ImageAsyncTask(imageView, callback, params);
-
-//            imageAsyncTask.setParams(params);
+            ImageAsyncTask imageAsyncTask = new ImageAsyncTask(imageView, callback);
 
             AsyncBitmapDrawable asyncbitmapDrawable = new AsyncBitmapDrawable(mResources, mPlaceholderBitmap, imageAsyncTask);
 
@@ -248,11 +231,11 @@ public class SuperImageLoader {
 
             if (widthInPx > 0 && heightInPx > 0) {
 
-                imageAsyncTask.start(url, widthInPx, heightInPx);
+                imageAsyncTask.start(url, widthInPx, heightInPx, params);
 
             } else {
 
-                imageAsyncTask.start(url);
+                imageAsyncTask.start(url, params);
 
             }
         }
@@ -349,7 +332,7 @@ public class SuperImageLoader {
         }
     }
 
-    public class ImageAsyncTask extends AsyncTask<String, Void, BitmapDrawable> {
+    public class ImageAsyncTask extends AsyncTask<Bundle, Void, BitmapDrawable> {
 
         protected String mUrl;
 
@@ -362,27 +345,21 @@ public class SuperImageLoader {
 
         private Bundle mParams;
 
-        public ImageAsyncTask(ImageView imageView, ImageLoaderCallback callback, Bundle extra) {
+        public ImageAsyncTask(ImageView imageView, ImageLoaderCallback callback) {
 
             mImageViewReference = new WeakReference<ImageView>(imageView);
 
             mCallback = callback;
 
-            mParams = extra;
+        }
+
+        public void start(String url, Bundle extra) {
+
+            start(url, DEFAULT_IMAGE_WIDTH, DEFAULT_IMAGE_HEIGHT, extra);
 
         }
 
-        public void start(String url) {
-
-            this.start(url, DEFAULT_IMAGE_WIDTH, DEFAULT_IMAGE_HEIGHT);
-
-        }
-
-//        public void setParams(Bundle params) {
-//            mParams = params;
-//        }
-
-        public void start(String url, int width, int height) {
+        public void start(String url, int width, int height, Bundle extra) {
 
             mUrl = url;
 
@@ -390,12 +367,12 @@ public class SuperImageLoader {
             mHeight = height;
 
             // custom version of AsyncTask
-            executeOnExecutor(AsyncTask.DUAL_THREAD_EXECUTOR, url);
+            executeOnExecutor(AsyncTask.DUAL_THREAD_EXECUTOR, extra);
 
         }
 
         @Override
-        protected BitmapDrawable doInBackground(String... params) {
+        protected BitmapDrawable doInBackground(Bundle... params) {
 
             synchronized (mPauseWorkLock) {
 
@@ -423,12 +400,6 @@ public class SuperImageLoader {
 
             if (!isCancelled() && getAttachedImageView() != null) {
 
-                if (mParams != null) {
-
-                    mBitmapSourceLoader.setParams(mParams);
-
-                }
-
 //                Log.d(LOG_TAG, String.format("Input bitmap: \nwidth = %s, \nheight = %s \nsample size = %s \nformat = %s", options.outWidth, options.outHeight, options.inSampleSize, options.outMimeType));
 
 //                if (AndroidVersions.hasHoneycomb()) {
@@ -437,7 +408,7 @@ public class SuperImageLoader {
 //
 //                }
 
-                bitmap = mBitmapSourceLoader.getBitmap(mUrl, mWidth, mHeight);
+                bitmap = mBitmapSourceLoader.getBitmap(mUrl, mWidth, mHeight, params[0]);
 
             }
 
@@ -511,9 +482,9 @@ public class SuperImageLoader {
     public static class ImageLoaderBuilder {
 
         private boolean sFadeIn = true;
-        private int sFadeInTime = 600;
+        private int sFadeInTime = 300;
 
-        private Bitmap sPlaceHolderImage;
+        private Bitmap sPlaceholder;
 
         private final Context sContext;
         private final Resources sResources;
@@ -575,14 +546,14 @@ public class SuperImageLoader {
 
         public ImageLoaderBuilder setLoadingImage(int resDrawableID) {
 
-            sPlaceHolderImage = BitmapFactory.decodeResource(sResources, resDrawableID);
+            sPlaceholder = BitmapFactory.decodeResource(sResources, resDrawableID);
 
             return this;
         }
 
-        public ImageLoaderBuilder setLoadingImage(Bitmap bitmap) {
+        public ImageLoaderBuilder setPlaceholder(Bitmap bitmap) {
 
-            sPlaceHolderImage = bitmap;
+            sPlaceholder = bitmap;
 
             return this;
         }

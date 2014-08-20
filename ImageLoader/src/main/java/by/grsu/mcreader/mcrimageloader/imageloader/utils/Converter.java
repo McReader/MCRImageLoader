@@ -9,8 +9,6 @@ import java.security.NoSuchAlgorithmException;
 
 public class Converter {
 
-    private static final String LOG_TAG = Converter.class.getSimpleName();
-
     private Converter() {
     }
 

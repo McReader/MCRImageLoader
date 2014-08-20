@@ -5,17 +5,17 @@ import android.os.Bundle;
 
 import java.io.InputStream;
 
-import by.grsu.mcreader.mcrimageloader.imageloader.BaseBitmapSourceLoader;
+import by.grsu.mcreader.mcrimageloader.imageloader.BaseBitmapLoader;
 import by.grsu.mcreader.mcrimageloader.imageloader.http.HttpWorker;
 
 /**
  * Created by dzianis_roi on 21.07.2014.
  */
-public class DefaultBitmapSourceLoader extends BaseBitmapSourceLoader<InputStream> {
+public class DefaultBitmapLoader extends BaseBitmapLoader<InputStream> {
 
     private HttpWorker mHttpWorker;
 
-    public DefaultBitmapSourceLoader() {
+    public DefaultBitmapLoader() {
         mHttpWorker = new HttpWorker();
     }
 

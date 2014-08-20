@@ -19,7 +19,7 @@ import java.lang.ref.WeakReference;
 import by.grsu.mcreader.mcrimageloader.imageloader.callback.ImageLoaderCallback;
 import by.grsu.mcreader.mcrimageloader.imageloader.drawable.AsyncBitmapDrawable;
 import by.grsu.mcreader.mcrimageloader.imageloader.drawable.RecyclingBitmapDrawable;
-import by.grsu.mcreader.mcrimageloader.imageloader.source.DefaultBitmapSourceLoader;
+import by.grsu.mcreader.mcrimageloader.imageloader.source.DefaultBitmapLoader;
 import by.grsu.mcreader.mcrimageloader.imageloader.utils.AndroidVersions;
 import by.grsu.mcreader.mcrimageloader.imageloader.utils.BitmapAnalizer;
 
@@ -42,7 +42,7 @@ public class SuperImageLoader {
 
     private ImageCacher mImageCacher;
 
-    private BaseBitmapSourceLoader mBitmapSourceLoader;
+    private BaseBitmapLoader mBitmapSourceLoader;
 
     private final Object mPauseWorkLock = new Object();
     private boolean mPauseWork = false;
@@ -67,10 +67,10 @@ public class SuperImageLoader {
         setBitmapSourceLoader(builder.sCustomLoader);
     }
 
-    public void setBitmapSourceLoader(BaseBitmapSourceLoader bitmapSourceLoader) {
+    public void setBitmapSourceLoader(BaseBitmapLoader bitmapSourceLoader) {
         if (this.mBitmapSourceLoader == bitmapSourceLoader) return;
 
-        this.mBitmapSourceLoader = bitmapSourceLoader == null ? new DefaultBitmapSourceLoader() : bitmapSourceLoader;
+        this.mBitmapSourceLoader = bitmapSourceLoader == null ? new DefaultBitmapLoader() : bitmapSourceLoader;
     }
 
     public void setPlaceholder(int resDrawableID) {
@@ -493,7 +493,7 @@ public class SuperImageLoader {
 
         private int sDiscCacheSize = -1, sMemoryCacheSize = -1;
 
-        private BaseBitmapSourceLoader sCustomLoader;
+        private BaseBitmapLoader sCustomLoader;
 
         public ImageLoaderBuilder(Context context) {
 
@@ -558,7 +558,7 @@ public class SuperImageLoader {
             return this;
         }
 
-        public ImageLoaderBuilder setCustomLoader(BaseBitmapSourceLoader loader) {
+        public ImageLoaderBuilder setCustomLoader(BaseBitmapLoader loader) {
 
             this.sCustomLoader = loader;
 

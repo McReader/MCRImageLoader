@@ -18,9 +18,9 @@ import by.grsu.mcreader.mcrimageloader.imageloader.utils.IOUtils;
 /**
  * Created by dzianis_roi on 21.07.2014.
  */
-public abstract class BaseBitmapSourceLoader<ResultSource> {
+public abstract class BaseBitmapLoader<ResultSource> {
 
-    private static final String TAG = BaseBitmapSourceLoader.class.getSimpleName();
+    private static final String TAG = BaseBitmapLoader.class.getSimpleName();
 
     protected Bitmap getBitmap(String url, int width, int height, Bundle extra) {
 

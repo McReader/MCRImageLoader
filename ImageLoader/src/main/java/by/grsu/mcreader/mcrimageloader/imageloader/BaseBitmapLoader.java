@@ -20,9 +20,17 @@ import by.grsu.mcreader.mcrimageloader.imageloader.utils.IOUtils;
  */
 public abstract class BaseBitmapLoader<ResultSource> {
 
+    public static final String IMAGE_WIDTH_EXTRA = "by.grsu.mcreader.mcrimageloader.imageloader.EXTRA_IMAGE_WIDTH";
+    public static final String IMAGE_HEIGHT_EXTRA = "by.grsu.mcreader.mcrimageloader.imageloader.IMAGE_HEIGHT_EXTRA";
+
     private static final String TAG = BaseBitmapLoader.class.getSimpleName();
 
-    protected Bitmap getBitmap(String url, int width, int height, Bundle extra) {
+    protected Bitmap getBitmap(String url, Bundle extra) {
+
+        if (extra == null) throw new IllegalArgumentException("Illegal extra for download!!");
+
+        int width = extra.getInt(IMAGE_WIDTH_EXTRA, SuperImageLoader.DEFAULT_IMAGE_WIDTH);
+        int height = extra.getInt(IMAGE_HEIGHT_EXTRA, SuperImageLoader.DEFAULT_IMAGE_HEIGHT);
 
         BitmapFactory.Options options = new BitmapFactory.Options();
 
@@ -154,7 +162,7 @@ public abstract class BaseBitmapLoader<ResultSource> {
 
     protected abstract ResultSource getSource(String url, BitmapFactory.Options options, Bundle extra);
 
-    protected Bitmap onBitmapReady(String url, Bitmap result, Bundle extra) {
+    protected synchronized Bitmap onBitmapReady(String url, Bitmap result, Bundle extra) {
         return result;
     }
 }

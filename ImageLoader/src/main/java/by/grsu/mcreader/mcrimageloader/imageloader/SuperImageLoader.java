@@ -30,8 +30,8 @@ public class SuperImageLoader {
     private boolean mFadeIn = true;
     private int mFadeInTime; // Default fade in time
 
-    private final static int DEFAULT_IMAGE_WIDTH = 300;
-    private final static int DEFAULT_IMAGE_HEIGHT = 300;
+    public final static int DEFAULT_IMAGE_WIDTH = 300;
+    public final static int DEFAULT_IMAGE_HEIGHT = 300;
 
     private final static ColorDrawable TRANSPARENT_DRAWABLE = new ColorDrawable(android.R.color.transparent);
 
@@ -155,7 +155,7 @@ public class SuperImageLoader {
 //
 //        }
 
-        Bitmap bitmap = mBitmapSourceLoader.getBitmap(url, widthInPx, heightInPx, extra);
+        Bitmap bitmap = mBitmapSourceLoader.getBitmap(url, extra);
 
         if (bitmap != null) {
 
@@ -176,7 +176,7 @@ public class SuperImageLoader {
     }
 
     public void loadBitmap(ImageView imageView, String url) {
-        loadBitmap(imageView, url, 0, 0, null, null);
+        loadBitmap(imageView, url, -1, -1, null, null);
     }
 
     public void loadBitmap(ImageView imageView, String url, int widthInPx, int heightInPx) {
@@ -188,7 +188,7 @@ public class SuperImageLoader {
     }
 
     public void loadBitmap(ImageView imageView, String url, ImageLoaderCallback callback) {
-        loadBitmap(imageView, url, 0, 0, null, callback);
+        loadBitmap(imageView, url, -1, -1, null, callback);
     }
 
     public void loadBitmap(ImageView imageView, String url, int widthInPx, int heightInPx, Bundle params, ImageLoaderCallback callback) {
@@ -205,13 +205,15 @@ public class SuperImageLoader {
             return;
         }
 
-//        boolean careAboutSize = widthInPx > 0 && heightInPx > 0;
+        boolean careAboutSize = widthInPx != -1 || heightInPx != -1;
 
         BitmapDrawable bitmapDrawable = mImageCacher.getBitmapFromMemoryCache(url);
 
-        if (bitmapDrawable != null) {
+        if (careAboutSize && !BitmapAnalizer.inspectDimensions(bitmapDrawable, widthInPx, heightInPx)) {
+            bitmapDrawable = null;
+        }
 
-            // TODO: handle careAboutSize BitmapSizeUtil.inspectDimensions(bitmapDrawable, widthInPx, heightInPx)
+        if (bitmapDrawable != null) {
 
             imageView.setImageDrawable(bitmapDrawable);
 
@@ -336,14 +338,9 @@ public class SuperImageLoader {
 
         protected String mUrl;
 
-        private int mWidth;
-        private int mHeight;
-
         private final WeakReference<ImageView> mImageViewReference;
 
         private final ImageLoaderCallback mCallback;
-
-        private Bundle mParams;
 
         public ImageAsyncTask(ImageView imageView, ImageLoaderCallback callback) {
 
@@ -363,12 +360,13 @@ public class SuperImageLoader {
 
             mUrl = url;
 
-            mWidth = width;
-            mHeight = height;
+            if (extra == null) extra = new Bundle();
+
+            extra.putInt(BaseBitmapLoader.IMAGE_WIDTH_EXTRA, width);
+            extra.putInt(BaseBitmapLoader.IMAGE_HEIGHT_EXTRA, height);
 
             // custom version of AsyncTask
             executeOnExecutor(AsyncTask.DUAL_THREAD_EXECUTOR, extra);
-
         }
 
         @Override
@@ -408,7 +406,7 @@ public class SuperImageLoader {
 //
 //                }
 
-                bitmap = mBitmapSourceLoader.getBitmap(mUrl, mWidth, mHeight, params[0]);
+                bitmap = mBitmapSourceLoader.getBitmap(mUrl, params[0]);
 
             }
 

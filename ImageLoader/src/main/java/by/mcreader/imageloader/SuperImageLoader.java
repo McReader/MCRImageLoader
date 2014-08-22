@@ -35,11 +35,11 @@ public class SuperImageLoader extends SuperImageLoaderCore {
      */
 
     public void loadBitmapSync(String url) {
-        super.loadBitmapSync(url, -1, -1, null, null);
+        super.loadBitmapSync(url, -1, -1, null, getDefaultLoader());
     }
 
     public void loadBitmapSync(String url, Bundle extra) {
-        super.loadBitmapSync(url, -1, -1, extra, null);
+        super.loadBitmapSync(url, -1, -1, extra, getDefaultLoader());
     }
 
     public void loadBitmapSync(String url, BaseBitmapLoader loader) {
@@ -47,11 +47,11 @@ public class SuperImageLoader extends SuperImageLoaderCore {
     }
 
     public void loadBitmapSync(String url, int widthInPx, int heightInPx) {
-        super.loadBitmapSync(url, widthInPx, heightInPx, null, null);
+        super.loadBitmapSync(url, widthInPx, heightInPx, null, getDefaultLoader());
     }
 
     public void loadBitmapSync(String url, int widthInPx, int heightInPx, Bundle params) {
-        super.loadBitmapSync(url, widthInPx, heightInPx, params, null);
+        super.loadBitmapSync(url, widthInPx, heightInPx, params, getDefaultLoader());
     }
 
     /**
@@ -59,15 +59,15 @@ public class SuperImageLoader extends SuperImageLoaderCore {
      */
 
     public void loadImage(ImageView imageView, String url) {
-        super.loadImage(imageView, url, -1, -1, null, null, null);
+        super.loadImage(imageView, url, -1, -1, null, null, getDefaultLoader());
     }
 
     public void loadImage(ImageView imageView, String url, Bundle extra) {
-        super.loadImage(imageView, url, -1, -1, extra, null, null);
+        super.loadImage(imageView, url, -1, -1, extra, null, getDefaultLoader());
     }
 
     public void loadImage(ImageView imageView, String url, ImageLoaderCallback callback) {
-        super.loadImage(imageView, url, -1, -1, null, callback, null);
+        super.loadImage(imageView, url, -1, -1, null, callback, getDefaultLoader());
     }
 
     public void loadImage(ImageView imageView, String url, BaseBitmapLoader loader) {
@@ -75,15 +75,15 @@ public class SuperImageLoader extends SuperImageLoaderCore {
     }
 
     public void loadImage(ImageView imageView, String url, int widthInPx, int heightInPx) {
-        super.loadImage(imageView, url, widthInPx, heightInPx, null, null, null);
+        super.loadImage(imageView, url, widthInPx, heightInPx, null, null, getDefaultLoader());
     }
 
     public void loadImage(ImageView imageView, String url, int widthInPx, int heightInPx, Bundle params) {
-        super.loadImage(imageView, url, widthInPx, heightInPx, params, null, null);
+        super.loadImage(imageView, url, widthInPx, heightInPx, params, null, getDefaultLoader());
     }
 
     public void loadImage(ImageView imageView, String url, int widthInPx, int heightInPx, Bundle params, ImageLoaderCallback callback) {
-        super.loadImage(imageView, url, widthInPx, heightInPx, params, callback, null);
+        super.loadImage(imageView, url, widthInPx, heightInPx, params, callback, getDefaultLoader());
     }
 
     public void loadImage(ImageView imageView, String url, int widthInPx, int heightInPx, Bundle params, BaseBitmapLoader loader) {
@@ -91,7 +91,7 @@ public class SuperImageLoader extends SuperImageLoaderCore {
     }
 
     public void loadImage(ImageView imageView, String url, int widthInPx, int heightInPx, ImageLoaderCallback callback) {
-        super.loadImage(imageView, url, widthInPx, heightInPx, null, callback, null);
+        super.loadImage(imageView, url, widthInPx, heightInPx, null, callback, getDefaultLoader());
     }
 
     public void loadImage(ImageView imageView, String url, int widthInPx, int heightInPx, ImageLoaderCallback callback, BaseBitmapLoader loader) {

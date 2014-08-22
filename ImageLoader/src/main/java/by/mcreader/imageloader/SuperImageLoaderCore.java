@@ -39,12 +39,20 @@ public class SuperImageLoaderCore {
 
     ImageCacher mImageCacher;
 
+    private DefaultBitmapLoader mDefaultLoader;
+
     private final Object mPauseWorkLock = new Object();
     private boolean mPauseWork = false;
 
     SuperImageLoaderCore(Context context) {
         mContext = context;
         mResources = context.getResources();
+    }
+
+    protected DefaultBitmapLoader getDefaultLoader() {
+        if (mDefaultLoader == null) mDefaultLoader = new DefaultBitmapLoader();
+
+        return mDefaultLoader;
     }
 
     public void setPlaceholder(int resDrawableID) {
@@ -123,7 +131,7 @@ public class SuperImageLoaderCore {
 
         BitmapDrawable bitmapDrawable = mImageCacher.getBitmapFromMemoryCache(url);
 
-        // TODO do smth clever
+        // TODO improve
         if (careAboutSize && !BitmapAnalizer.inspectDimensions(bitmapDrawable, widthInPx, heightInPx)) {
             bitmapDrawable = null;
         }
@@ -135,16 +143,13 @@ public class SuperImageLoaderCore {
             if (callback != null) callback.onLoadingFinished(bitmapDrawable);
 
             return;
-
         }
 
         if (cancelPotentialDownload(imageView, url)) {
 
-            ImageAsyncTask imageAsyncTask = new ImageAsyncTask(imageView, callback);
+            ImageAsyncTask imageAsyncTask = new ImageAsyncTask(imageView);
 
-            customLoader = customLoader == null ? new DefaultBitmapLoader() : customLoader;
-
-            AsyncBitmapDrawable asyncbitmapDrawable = new AsyncBitmapDrawable(mResources, mPlaceholderBitmap, imageAsyncTask, customLoader);
+            AsyncBitmapDrawable asyncbitmapDrawable = new AsyncBitmapDrawable(mResources, mPlaceholderBitmap, imageAsyncTask, customLoader, callback);
 
             imageView.setImageDrawable(asyncbitmapDrawable);
 
@@ -196,6 +201,13 @@ public class SuperImageLoaderCore {
         final Drawable drawable = imageView == null ? null : imageView.getDrawable();
 
         return drawable instanceof AsyncBitmapDrawable ? ((AsyncBitmapDrawable) drawable).getBitmapLoader() : null;
+    }
+
+    private static ImageLoaderCallback getAttachedCallback(ImageView imageView) {
+
+        final Drawable drawable = imageView == null ? null : imageView.getDrawable();
+
+        return drawable instanceof AsyncBitmapDrawable ? ((AsyncBitmapDrawable) drawable).getImageLoaderCallback() : null;
     }
 
     private void setImageDrawable(ImageView imageView, Drawable drawable) {
@@ -255,13 +267,9 @@ public class SuperImageLoaderCore {
 
         private final WeakReference<ImageView> mImageViewReference;
 
-        private final ImageLoaderCallback mCallback;
-
-        public ImageAsyncTask(ImageView imageView, ImageLoaderCallback callback) {
+        public ImageAsyncTask(ImageView imageView) {
 
             mImageViewReference = new WeakReference<ImageView>(imageView);
-
-            mCallback = callback;
 
         }
 
@@ -344,11 +352,14 @@ public class SuperImageLoaderCore {
             ImageView imageView = getAttachedImageView();
 
             // Change bitmap only if this process is still associated with it
-            if (imageView != null)
+            if (imageView != null) {
+
+                ImageLoaderCallback callback = getAttachedCallback(imageView);
+
                 setImageDrawable(imageView, result);
 
-            // TODO: get attached callback
-            if (mCallback != null) mCallback.onLoadingFinished(result);
+                if (callback != null) callback.onLoadingFinished(result);
+            }
         }
 
         @Override

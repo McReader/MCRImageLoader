@@ -18,6 +18,7 @@ public class ReusableBitmapUtil {
             // From Android 4.4 (KitKat) onward we can re-use if the byte size of
             // the new bitmap is smaller than the reusable bitmap candidate
             // allocation byte count.
+
             int width = targetOptions.outWidth / targetOptions.inSampleSize;
             int height = targetOptions.outHeight / targetOptions.inSampleSize;
             int byteCount = width * height * getBytesPerPixel(candidate.getConfig());

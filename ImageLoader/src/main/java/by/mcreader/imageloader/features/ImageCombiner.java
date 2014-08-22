@@ -129,7 +129,7 @@ public class ImageCombiner {
 //                    // if bitmap not cached, so loading it
 //                    if (NetworkHelper.checkConnection(mContext)
 //                            && !isCancelled() && getAttachedImageView() != null) {
-//                        drawPart(mImageWorker.loadBitmap(params[i],
+//                        drawPart(mImageWorker.loadImage(params[i],
 //                                (int) mWidth, (int) mHeight), offset);
 //                    }
 //                } catch (IOException e) {

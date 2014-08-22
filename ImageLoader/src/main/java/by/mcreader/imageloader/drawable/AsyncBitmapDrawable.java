@@ -6,20 +6,28 @@ import android.graphics.drawable.BitmapDrawable;
 
 import java.lang.ref.WeakReference;
 
-import by.mcreader.imageloader.SuperImageLoader;
+import by.mcreader.imageloader.BaseBitmapLoader;
+import by.mcreader.imageloader.SuperImageLoaderCore;
 
 public class AsyncBitmapDrawable extends BitmapDrawable {
 
-    private WeakReference<SuperImageLoader.ImageAsyncTask> mDrawableTaskReference;
+    private WeakReference<SuperImageLoaderCore.ImageAsyncTask> mDrawableTaskReference;
 
-    public AsyncBitmapDrawable(Resources resources, Bitmap loadingBitmap, SuperImageLoader.ImageAsyncTask loaderTask) {
+    private WeakReference<BaseBitmapLoader> mBitmapLoader;
+
+    public AsyncBitmapDrawable(Resources resources, Bitmap loadingBitmap, SuperImageLoaderCore.ImageAsyncTask loaderTask, BaseBitmapLoader bitmapLoader) {
         super(resources, loadingBitmap);
 
-        mDrawableTaskReference = new WeakReference<SuperImageLoader.ImageAsyncTask>(loaderTask);
+        mDrawableTaskReference = new WeakReference<SuperImageLoaderCore.ImageAsyncTask>(loaderTask);
+
+        mBitmapLoader = new WeakReference<BaseBitmapLoader>(bitmapLoader);
     }
 
-    public SuperImageLoader.ImageAsyncTask getLoaderTask() {
+    public SuperImageLoaderCore.ImageAsyncTask getLoaderTask() {
         return mDrawableTaskReference.get();
     }
 
+    public BaseBitmapLoader getBitmapLoader() {
+        return mBitmapLoader.get();
+    }
 }

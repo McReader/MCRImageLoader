@@ -12,6 +12,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
+import by.mcreader.imageloader.utils.AndroidVersions;
 import by.mcreader.imageloader.utils.BitmapAnalizer;
 import by.mcreader.imageloader.utils.IOUtils;
 
@@ -20,17 +21,22 @@ import by.mcreader.imageloader.utils.IOUtils;
  */
 public abstract class BaseBitmapLoader<ResultSource> {
 
+    private static final String TAG = BaseBitmapLoader.class.getSimpleName();
+
     public static final String IMAGE_WIDTH_EXTRA = "by.mcreader.imageloader.EXTRA_IMAGE_WIDTH";
     public static final String IMAGE_HEIGHT_EXTRA = "by.mcreader.imageloader.IMAGE_HEIGHT_EXTRA";
 
-    private static final String TAG = BaseBitmapLoader.class.getSimpleName();
+    public final static int DEFAULT_IMAGE_WIDTH = 300;
+    public final static int DEFAULT_IMAGE_HEIGHT = 300;
+
+//    private ImageCacher mImageCacher;
 
     protected Bitmap loadBitmap(String url, Bundle extra) {
 
         if (extra == null) throw new IllegalArgumentException("Illegal extra for download!!");
 
-        int width = extra.getInt(IMAGE_WIDTH_EXTRA, SuperImageLoader.DEFAULT_IMAGE_WIDTH);
-        int height = extra.getInt(IMAGE_HEIGHT_EXTRA, SuperImageLoader.DEFAULT_IMAGE_HEIGHT);
+        int width = extra.getInt(IMAGE_WIDTH_EXTRA, DEFAULT_IMAGE_WIDTH);
+        int height = extra.getInt(IMAGE_HEIGHT_EXTRA, DEFAULT_IMAGE_HEIGHT);
 
         BitmapFactory.Options options = new BitmapFactory.Options();
 
@@ -42,27 +48,21 @@ public abstract class BaseBitmapLoader<ResultSource> {
 
         options.inJustDecodeBounds = true;
 
-        if (source instanceof FileInputStream) {
-
+        if (source instanceof FileInputStream)
             result = decodeFileInputStream((FileInputStream) source, width, height, options);
 
-        } else if (source instanceof InputStream) {
-
+        else if (source instanceof InputStream)
             result = decodeInputStream((InputStream) source, width, height, options);
 
-        } else if (source instanceof File) {
-
+        else if (source instanceof File)
             result = decodeFile(url, width, height, options);
 
-        } else if (source instanceof FileDescriptor) {
-
+        else if (source instanceof FileDescriptor)
             result = decodeFileDescriptor(((FileDescriptor) source), width, height, options);
 
-        } else {
-
+        else
             result = decodeByteArray(((byte[]) source), width, height, options);
 
-        }
 
         return onBitmapReady(url, result, extra);
     }
@@ -75,13 +75,7 @@ public abstract class BaseBitmapLoader<ResultSource> {
 
             FileDescriptor fd = source.getFD();
 
-            BitmapFactory.decodeFileDescriptor(fd, null, options);
-
-            options.inSampleSize = BitmapAnalizer.calculateInSampleSize(options, width, height);
-
-            options.inJustDecodeBounds = false;
-
-            result = BitmapFactory.decodeFileDescriptor(fd, null, options);
+            return decodeFileDescriptor(fd, width, height, options);
 
         } catch (IOException e) {
 
@@ -108,6 +102,8 @@ public abstract class BaseBitmapLoader<ResultSource> {
 
             options.inSampleSize = BitmapAnalizer.calculateInSampleSize(options, width, height);
 
+//            addInOptionsBitmap(options);
+
             options.inJustDecodeBounds = false;
 
             source.reset();
@@ -132,6 +128,8 @@ public abstract class BaseBitmapLoader<ResultSource> {
 
         options.inSampleSize = BitmapAnalizer.calculateInSampleSize(options, width, height);
 
+//        addInOptionsBitmap(options);
+
         options.inJustDecodeBounds = false;
 
         return BitmapFactory.decodeFile(url, options);
@@ -142,6 +140,8 @@ public abstract class BaseBitmapLoader<ResultSource> {
         BitmapFactory.decodeFileDescriptor(source, null, options);
 
         options.inSampleSize = BitmapAnalizer.calculateInSampleSize(options, width, height);
+
+//        addInOptionsBitmap(options);
 
         options.inJustDecodeBounds = false;
 
@@ -155,14 +155,25 @@ public abstract class BaseBitmapLoader<ResultSource> {
 
         options.inSampleSize = BitmapAnalizer.calculateInSampleSize(options, width, height);
 
+//        addInOptionsBitmap(options);
+
         options.inJustDecodeBounds = false;
 
         return BitmapFactory.decodeByteArray(source, 0, source.length, options);
     }
 
+//    private void addInOptionsBitmap(BitmapFactory.Options options) {
+//        if (AndroidVersions.hasHoneycomb()) mImageCacher.addInBitmapOptions(options);
+//    }
+
+
     protected abstract ResultSource getSource(String url, BitmapFactory.Options options, Bundle extra);
 
-    protected synchronized Bitmap onBitmapReady(String url, Bitmap result, Bundle extra) {
+    protected Bitmap onBitmapReady(String url, Bitmap result, Bundle extra) {
         return result;
     }
+
+//    public void setImageCacher(ImageCacher imageCacher) {
+//        this.mImageCacher = imageCacher;
+//    }
 }

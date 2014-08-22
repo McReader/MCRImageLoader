@@ -56,14 +56,15 @@ public class ImageCacher {
 
                     ((RecyclingBitmapDrawable) oldValue).setIsCached(false);
 
-                } else {
-
+                }
+//                else {
+//
 //                    if (mReusableBitmaps != null) {
 //
 //                        mReusableBitmaps.add(new SoftReference<Bitmap>(oldValue.getBitmap()));
 //
 //                    }
-                }
+//                }
             }
         } : null;
 
@@ -150,7 +151,7 @@ public class ImageCacher {
 //            options.inBitmap = inBitmap;
 //        }
 //    }
-
+//
 //    protected Bitmap getBitmapFromReusableSet(BitmapFactory.Options options) {
 //        Bitmap bitmap = null;
 //

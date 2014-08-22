@@ -16,6 +16,8 @@ public class BitmapAnalizer {
 
     private static final String TAG = BitmapAnalizer.class.getSimpleName();
 
+    private static final int ALLOWED_INFELICITY = 150;
+
     private BitmapAnalizer() {
     }
 
@@ -58,8 +60,15 @@ public class BitmapAnalizer {
 
     public static boolean inspectDimensions(Bitmap bitmap, int requiredWidth, int requiredHeight) {
 
-        return bitmap != null && bitmap.getWidth() == requiredWidth && bitmap.getHeight() == requiredHeight;
+        if (bitmap == null) return false;
 
+        int actualWidth = bitmap.getWidth(), actualHeight = bitmap.getHeight();
+
+        // TODO
+
+        return actualWidth <= requiredWidth + ALLOWED_INFELICITY && actualWidth >= requiredWidth - ALLOWED_INFELICITY
+                &&
+                actualHeight <= requiredHeight + ALLOWED_INFELICITY && actualHeight >= requiredHeight - ALLOWED_INFELICITY;
     }
 
     public static int calculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {

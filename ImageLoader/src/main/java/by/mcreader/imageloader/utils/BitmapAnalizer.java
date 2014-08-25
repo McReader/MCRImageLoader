@@ -16,7 +16,7 @@ public class BitmapAnalizer {
 
     private static final String TAG = BitmapAnalizer.class.getSimpleName();
 
-    private static final int ALLOWED_INFELICITY = 150;
+    private static final int ALLOWED_INFELICITY = 300;
 
     private BitmapAnalizer() {
     }
@@ -63,8 +63,6 @@ public class BitmapAnalizer {
         if (bitmap == null) return false;
 
         int actualWidth = bitmap.getWidth(), actualHeight = bitmap.getHeight();
-
-        // TODO
 
         return actualWidth <= requiredWidth + ALLOWED_INFELICITY && actualWidth >= requiredWidth - ALLOWED_INFELICITY
                 &&

@@ -326,13 +326,13 @@ public class SuperImageLoaderCore {
             if (bitmap != null) {
 
                 Log.d(LOG_TAG, String.format("Result Bitmap: width = %s height = %s config = %s", bitmap.getWidth(), bitmap.getHeight(), bitmap.getConfig()));
-
 //                if (AndroidVersions.hasHoneycomb()) {
 //
 //                    bitmapDrawable = new BitmapDrawable(mResources, bitmap);
 //
 //                }
 //                else {
+
 
                 bitmapDrawable = new RecyclingBitmapDrawable(mResources, bitmap);
 

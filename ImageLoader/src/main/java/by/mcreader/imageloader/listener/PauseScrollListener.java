@@ -13,12 +13,18 @@ public class PauseScrollListener implements AbsListView.OnScrollListener {
 
     private final AbsListView.OnScrollListener externalListener;
 
-    public PauseScrollListener(SuperImageLoaderCore imageLoader) {
-        this(imageLoader, null);
+    private boolean pauseOnScroll, pauseOnFling;
+
+    public PauseScrollListener(SuperImageLoaderCore imageLoader, boolean pauseOnScroll, boolean pauseOnFling) {
+        this(imageLoader, pauseOnScroll, pauseOnFling, null);
     }
 
-    public PauseScrollListener(SuperImageLoaderCore imageLoader, AbsListView.OnScrollListener externalListener) {
+    public PauseScrollListener(SuperImageLoaderCore imageLoader, boolean pauseOnScroll, boolean pauseOnFling, AbsListView.OnScrollListener externalListener) {
         this.imageLoader = imageLoader;
+
+        this.pauseOnScroll = pauseOnScroll;
+        this.pauseOnFling = pauseOnFling;
+
         this.externalListener = externalListener;
     }
 
@@ -29,27 +35,23 @@ public class PauseScrollListener implements AbsListView.OnScrollListener {
                 imageLoader.setPauseWork(false);
                 break;
             case AbsListView.OnScrollListener.SCROLL_STATE_TOUCH_SCROLL:
-                imageLoader.setPauseWork(true);
+                if (pauseOnScroll) imageLoader.setPauseWork(true);
                 break;
             case AbsListView.OnScrollListener.SCROLL_STATE_FLING:
-                imageLoader.setPauseWork(true);
+                if (pauseOnFling) imageLoader.setPauseWork(true);
                 break;
         }
 
-        if (externalListener != null) {
-
+        if (externalListener != null)
             externalListener.onScrollStateChanged(view, scrollState);
 
-        }
     }
 
     @Override
     public void onScroll(AbsListView view, int firstVisibleItem, int visibleItemCount, int totalItemCount) {
 
-        if (externalListener != null) {
-
+        if (externalListener != null)
             externalListener.onScroll(view, firstVisibleItem, visibleItemCount, totalItemCount);
 
-        }
     }
 }

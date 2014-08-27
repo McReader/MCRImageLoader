@@ -29,14 +29,9 @@ public abstract class BaseBitmapLoader<ResultSource> {
     public final static int DEFAULT_IMAGE_WIDTH = 300;
     public final static int DEFAULT_IMAGE_HEIGHT = 300;
 
-//    private ImageCacher mImageCacher;
-
-    protected Bitmap loadBitmap(String url, Bundle extra) {
+    protected Bitmap loadBitmap(String url, int width, int height, Bundle extra) {
 
         if (extra == null) throw new IllegalArgumentException("Illegal extra for download!!");
-
-        int width = extra.getInt(IMAGE_WIDTH_EXTRA, DEFAULT_IMAGE_WIDTH);
-        int height = extra.getInt(IMAGE_HEIGHT_EXTRA, DEFAULT_IMAGE_HEIGHT);
 
         BitmapFactory.Options options = new BitmapFactory.Options();
 
@@ -173,7 +168,4 @@ public abstract class BaseBitmapLoader<ResultSource> {
         return result;
     }
 
-//    public void setImageCacher(ImageCacher imageCacher) {
-//        this.mImageCacher = imageCacher;
-//    }
 }

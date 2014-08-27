@@ -80,20 +80,17 @@ public class SuperImageLoaderCore {
             return null;
         }
 
-        BitmapDrawable bitmapDrawable = mImageCacher.getBitmapFromMemoryCache(url);
+
+        BitmapDrawable bitmapDrawable = BitmapAnalizer.inspectBitmap(mImageCacher.getBitmapFromMemoryCache(url), widthInPx, heightInPx);
 
         if (bitmapDrawable != null) return bitmapDrawable;
 
-        bitmapDrawable = mImageCacher.getBitmapFromFileCache(mContext.getResources(), url);
+        bitmapDrawable = BitmapAnalizer.inspectBitmap(mImageCacher.getBitmapFromFileCache(mContext.getResources(), url), widthInPx, heightInPx);
 
         if (bitmapDrawable != null) return bitmapDrawable;
 
-        if (extra == null) extra = new Bundle();
 
-        extra.putInt(BaseBitmapLoader.IMAGE_WIDTH_EXTRA, widthInPx <= 0 ? BaseBitmapLoader.DEFAULT_IMAGE_WIDTH : widthInPx);
-        extra.putInt(BaseBitmapLoader.IMAGE_HEIGHT_EXTRA, heightInPx <= 0 ? BaseBitmapLoader.DEFAULT_IMAGE_HEIGHT : heightInPx);
-
-        Bitmap bitmap = loader.loadBitmap(url, extra);
+        Bitmap bitmap = loader.loadBitmap(url, widthInPx, heightInPx, extra);
 
         if (bitmap != null) {
 
@@ -127,14 +124,7 @@ public class SuperImageLoaderCore {
             return;
         }
 
-        boolean careAboutSize = widthInPx != -1 || heightInPx != -1;
-
-        BitmapDrawable bitmapDrawable = mImageCacher.getBitmapFromMemoryCache(url);
-
-        // TODO improve
-        if (careAboutSize && !BitmapAnalizer.inspectDimensions(bitmapDrawable, widthInPx, heightInPx)) {
-            bitmapDrawable = null;
-        }
+        BitmapDrawable bitmapDrawable = BitmapAnalizer.inspectBitmap(mImageCacher.getBitmapFromMemoryCache(url), widthInPx, heightInPx);
 
         if (bitmapDrawable != null) {
 
@@ -159,7 +149,7 @@ public class SuperImageLoaderCore {
 
             } else {
 
-                imageAsyncTask.start(url, params);
+                imageAsyncTask.start(url, BaseBitmapLoader.DEFAULT_IMAGE_WIDTH, BaseBitmapLoader.DEFAULT_IMAGE_HEIGHT, params);
 
             }
         }
@@ -273,12 +263,6 @@ public class SuperImageLoaderCore {
 
         }
 
-        public void start(String url, Bundle extra) {
-
-            start(url, BaseBitmapLoader.DEFAULT_IMAGE_WIDTH, BaseBitmapLoader.DEFAULT_IMAGE_HEIGHT, extra);
-
-        }
-
         public void start(String url, int width, int height, Bundle extra) {
 
             mUrl = url;
@@ -309,7 +293,13 @@ public class SuperImageLoaderCore {
                 }
             }
 
-            BitmapDrawable bitmapDrawable = mImageCacher.getBitmapFromFileCache(mContext.getResources(), mUrl);
+            int width = params[0].getInt(BaseBitmapLoader.IMAGE_WIDTH_EXTRA, BaseBitmapLoader.DEFAULT_IMAGE_WIDTH);
+            int height = params[0].getInt(BaseBitmapLoader.IMAGE_HEIGHT_EXTRA, BaseBitmapLoader.DEFAULT_IMAGE_HEIGHT);
+
+            params[0].remove(BaseBitmapLoader.IMAGE_WIDTH_EXTRA);
+            params[0].remove(BaseBitmapLoader.IMAGE_HEIGHT_EXTRA);
+
+            BitmapDrawable bitmapDrawable = BitmapAnalizer.inspectBitmap(mImageCacher.getBitmapFromFileCache(mContext.getResources(), mUrl), width, height);
 
             if (bitmapDrawable != null) return bitmapDrawable;
 
@@ -319,7 +309,7 @@ public class SuperImageLoaderCore {
 
             if (!isCancelled() && imageView != null) {
 
-                bitmap = getAttachedBitmapLoader(imageView).loadBitmap(mUrl, params[0]);
+                bitmap = getAttachedBitmapLoader(imageView).loadBitmap(mUrl, width, height, params[0]);
 
             }
 

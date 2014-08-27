@@ -16,12 +16,10 @@ public class BitmapAnalizer {
 
     private static final String TAG = BitmapAnalizer.class.getSimpleName();
 
-    private static final int ALLOWED_INFELICITY = 300;
-
     private BitmapAnalizer() {
     }
 
-    public static int analizRotationDegree(String path) {
+    public static int countRotationDegree(String path) {
 
         if (TextUtils.isEmpty(path)) return -1;
 
@@ -52,26 +50,40 @@ public class BitmapAnalizer {
         return -1;
     }
 
-    public static boolean inspectDimensions(BitmapDrawable drawable, int requiredWidth, int requiredHeight) {
+    public static BitmapDrawable inspectBitmap(BitmapDrawable bitmapDrawable, int reqWidth, int reqHeight) {
 
-        return drawable != null && inspectDimensions(drawable.getBitmap(), requiredWidth, requiredHeight);
+        if (bitmapDrawable == null) return null;
 
+        boolean careAboutSize = reqWidth != -1 && reqHeight != -1;
+
+        if (!careAboutSize) {
+
+            return bitmapDrawable;
+
+        } else if (inspectDimensions(bitmapDrawable, reqWidth, reqHeight)) {
+
+            return bitmapDrawable;
+
+        }
+
+        return null;
     }
 
-    public static boolean inspectDimensions(Bitmap bitmap, int requiredWidth, int requiredHeight) {
+    private static boolean inspectDimensions(BitmapDrawable existsDrawable, int reqWidth, int reqHeight) {
 
-        if (bitmap == null) return false;
+        Bitmap bitmap = existsDrawable.getBitmap();
 
-        int actualWidth = bitmap.getWidth(), actualHeight = bitmap.getHeight();
+        if (bitmap == null || reqHeight <= 0 || reqWidth <= 0) return false;
 
-        return actualWidth <= requiredWidth + ALLOWED_INFELICITY && actualWidth >= requiredWidth - ALLOWED_INFELICITY
-                &&
-                actualHeight <= requiredHeight + ALLOWED_INFELICITY && actualHeight >= requiredHeight - ALLOWED_INFELICITY;
+        final int heightRatio = (int) Math.floor((float) bitmap.getWidth() / (float) reqHeight);
+        final int widthRatio = (int) Math.floor((float) bitmap.getHeight() / (float) reqWidth);
+
+        return heightRatio == 1 || widthRatio == 1;
+
     }
 
     public static int calculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {
 
-        // Raw height and width of image
         final int height = options.outHeight;
         final int width = options.outWidth;
 
@@ -79,19 +91,12 @@ public class BitmapAnalizer {
 
         if (height > reqHeight || width > reqWidth) {
 
-            // Calculate ratios of height and width to requested height and
-            // width
             final int heightRatio = Math.round((float) height / (float) reqHeight);
             final int widthRatio = Math.round((float) width / (float) reqWidth);
 
-            // Choose the smallest ratio as inSampleSize value, this will
-            // guarantee
-            // a final image with both dimensions larger than or equal to the
-            // requested height and width.
             inSampleSize = heightRatio < widthRatio ? heightRatio : widthRatio;
         }
 
         return inSampleSize;
     }
-
 }

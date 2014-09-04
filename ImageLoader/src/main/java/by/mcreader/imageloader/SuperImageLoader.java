@@ -105,6 +105,7 @@ public class SuperImageLoader extends SuperImageLoaderCore {
     public static class ImageLoaderBuilder {
 
         private boolean sFadeIn = true;
+        
         private int sFadeInTime = 300;
 
         private final Context sContext;

@@ -64,13 +64,9 @@ public abstract class BaseBitmapLoader<ResultSource> {
 
     private Bitmap decodeFileInputStream(FileInputStream source, int width, int height, BitmapFactory.Options options) {
 
-        Bitmap result = null;
-
         try {
 
-            FileDescriptor fd = source.getFD();
-
-            return decodeFileDescriptor(fd, width, height, options);
+            return decodeFileDescriptor(source.getFD(), width, height, options);
 
         } catch (IOException e) {
 
@@ -82,7 +78,7 @@ public abstract class BaseBitmapLoader<ResultSource> {
 
         }
 
-        return result;
+        return null;
     }
 
     private Bitmap decodeInputStream(InputStream source, int width, int height, BitmapFactory.Options options) {

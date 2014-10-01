@@ -18,11 +18,9 @@ public class BitmapReformer {
 
             mtx.postRotate(degree);
 
-            Bitmap result = Bitmap.createBitmap(target, 0, 0, target.getWidth(), target.getHeight(), mtx, true);
+            target = Bitmap.createBitmap(target, 0, 0, target.getWidth(), target.getHeight(), mtx, true);
 
-            target.recycle();
-
-            return result;
+            return target;
         }
 
         return target;

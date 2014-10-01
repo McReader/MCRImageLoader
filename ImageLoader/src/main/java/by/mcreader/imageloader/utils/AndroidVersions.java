@@ -23,6 +23,14 @@ public class AndroidVersions {
         return has(Build.VERSION_CODES.HONEYCOMB_MR1);
     }
 
+    public static boolean hasIceCreamSandwich() {
+        return has(Build.VERSION_CODES.ICE_CREAM_SANDWICH);
+    }
+
+    public static boolean hasIceCreamSandwichMR1() {
+        return has(Build.VERSION_CODES.ICE_CREAM_SANDWICH_MR1);
+    }
+
     public static boolean hasJellyBean() {
         return has(Build.VERSION_CODES.JELLY_BEAN);
     }
@@ -34,5 +42,4 @@ public class AndroidVersions {
     private static boolean has(int version) {
         return Build.VERSION.SDK_INT >= version;
     }
-
 }

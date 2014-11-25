@@ -13,7 +13,6 @@ public class Converter {
     }
 
     public static String stringToMD5(String key) {
-
         String cacheKey;
 
         try {
@@ -36,13 +35,11 @@ public class Converter {
     }
 
     public static String bytesToHexString(byte[] bytes) {
-
         StringBuilder sb = new StringBuilder();
 
         String hex;
 
         for (byte b : bytes) {
-
             hex = Integer.toHexString(0xFF & b);
 
             if (hex.length() == 1) {
@@ -52,14 +49,12 @@ public class Converter {
             }
 
             sb.append(hex);
-
         }
 
         return sb.toString();
     }
 
     public static String toHexadecimalString(int[] source) {
-
         StringBuilder sb = new StringBuilder();
 
         String hex;
@@ -81,22 +76,11 @@ public class Converter {
         return sb.toString();
     }
 
-    public static int scale(Context context, float paramFloat) {
-
-        return context == null ? -1 : Math.round(paramFloat * context.getResources().getDisplayMetrics().density);
-
-    }
-
     public static float convertDpToPixel(Context context, float dp) {
-
         return TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP, dp, context.getResources().getDisplayMetrics());
-
     }
 
     public static float convertPixelsToDp(Context context, float px) {
-
         return context == null ? -1 : px / (context.getResources().getDisplayMetrics().densityDpi / 160f);
-
     }
-
 }

@@ -1,61 +1,40 @@
-package by.mcreader.imageloader;
+package by.mcreader.imageloader.cache.memory;
 
 
-import android.content.res.Resources;
-import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
 import android.support.v4.util.LruCache;
 import android.text.TextUtils;
 import android.util.Log;
 
-import java.io.File;
-
-import by.mcreader.imageloader.cache.LimitedDiscCache;
+import by.mcreader.imageloader.cache.MemCache;
 import by.mcreader.imageloader.drawable.RecyclingBitmapDrawable;
-import by.mcreader.imageloader.utils.AndroidVersions;
-import by.mcreader.imageloader.utils.ReusableBitmapUtil;
+import by.mcreader.imageloader.utils.BitmapUtil;
 
-public class ImageCacher {
+public class DefaultMemoryCache implements MemCache {
 
-    protected static final String LOG_TAG = ImageCacher.class.getSimpleName();
+    protected static final String LOG_TAG = DefaultMemoryCache.class.getSimpleName();
+    public static final String ID = "cache.memory.DefaultMemoryCache";
 
     private LruCache<String, BitmapDrawable> mStorage;
 
+
 //    private final Set<SoftReference<Bitmap>> mReusableBitmaps;
 
-    private LimitedDiscCache mDiscCache;
-
-    protected ImageCacher(File cacheDir, boolean memoryCache, boolean diskCache, int memoryCacheSize, int discCacheSize) {
-
+    public DefaultMemoryCache(int size) {
 //        mReusableBitmaps = AndroidVersions.hasHoneycomb() ? Collections.synchronizedSet(new HashSet<SoftReference<Bitmap>>()) : null;
 
-        init(
-                cacheDir,
-                memoryCache,
-                diskCache,
-                memoryCacheSize > 1 * 1024 * 1024 ? memoryCacheSize : 5 * 1024 * 1024, // if > 1mb then apply non-default memory cache size
-                discCacheSize > 1 * 1024 * 1024 ? discCacheSize : 5 * 1024 * 1024); //if > 1mb then apply non-default disk cache size
-    }
-
-    private void init(File cacheDir, boolean memoryCache, boolean diskCache, int memoryCacheSize, int discCacheSize) {
-
-        mStorage = memoryCache ? new LruCache<String, BitmapDrawable>(memoryCacheSize) {
+        mStorage = new LruCache<String, BitmapDrawable>(size) {
 
             @Override
             protected int sizeOf(String key, BitmapDrawable value) {
-
-                return value == null ? 0 : ReusableBitmapUtil.byteSizeOf(value.getBitmap());
-
+                return value == null ? 0 : BitmapUtil.byteSizeOf(value.getBitmap());
             }
 
             @Override
-            protected void entryRemoved(boolean evicted, String key, BitmapDrawable
-                    oldValue, BitmapDrawable newValue) {
+            protected void entryRemoved(boolean evicted, String key, BitmapDrawable oldValue, BitmapDrawable newValue) {
 
                 if (RecyclingBitmapDrawable.class.isInstance(oldValue)) {
-
                     ((RecyclingBitmapDrawable) oldValue).setIsCached(false);
-
                 }
 //                else {
 //
@@ -66,75 +45,57 @@ public class ImageCacher {
 //                    }
 //                }
             }
-        } : null;
-
-        mDiscCache = diskCache ? new LimitedDiscCache(cacheDir, discCacheSize) : null;
+        };
     }
 
-    protected BitmapDrawable getBitmapFromFileCache(Resources resources, String url) {
+//    protected BitmapDrawable fromFileCache(Resources resources, String url) {
+//        if (mDiscCache == null) return null;
+//
+//        Bitmap result = mDiscCache.get(url);
+//
+//        BitmapDrawable drawable = result == null ? null : AndroidVersions.hasHoneycomb() ? new BitmapDrawable(resources, result) : new RecyclingBitmapDrawable(resources, result);
+//
+//        if (mStorage != null) putBitmapToMemoryCache(url, drawable);
+//
+//        return drawable;
+//    }
 
-        if (mDiscCache == null) return null;
+//    protected void putBitmapToFileCache(String key, BitmapDrawable value) {
+//        if (TextUtils.isEmpty(key) || value == null) {
+//            Log.w(LOG_TAG, "Can't put bitmap to file cache. Illegal arguments!");
+//
+//            return;
+//        }
+//
+//        mDiscCache.put(key, value.getBitmap());
+//    }
 
-        Bitmap result = mDiscCache.get(url);
-
-        BitmapDrawable drawable = result == null ? null : AndroidVersions.hasHoneycomb() ? new BitmapDrawable(resources, result) : new RecyclingBitmapDrawable(resources, result);
-
-        if (mStorage != null) {
-
-            putBitmapToMemoryCache(url, drawable);
-
-        }
-
-        return drawable;
-    }
-
-    protected void putBitmapToFileCache(String key, BitmapDrawable value) {
-
-        if (TextUtils.isEmpty(key) || value == null) {
-
-            Log.w(LOG_TAG, "Can't put bitmap to file cache. Illegal arguments!");
-
-            return;
-        }
-
-        mDiscCache.put(key, value.getBitmap());
-    }
-
-    protected BitmapDrawable getBitmapFromMemoryCache(String key) {
-
+    @Override
+    public BitmapDrawable get(String key) {
         return TextUtils.isEmpty(key) || mStorage == null ? null : mStorage.get(key);
-
     }
 
-    protected void put(String url, BitmapDrawable value) {
-
-        if (mStorage != null) putBitmapToMemoryCache(url, value);
-
-        if (mDiscCache != null) putBitmapToFileCache(url, value);
-
-    }
-
-    protected void putBitmapToMemoryCache(String key, BitmapDrawable value) {
-
+    @Override
+    public void put(String key, BitmapDrawable value) {
         if (mStorage == null) return;
 
         if (TextUtils.isEmpty(key) || value == null) {
-
             Log.w(LOG_TAG, "Can't put bitmap to memory cache. Illegal arguments!");
-
             return;
         }
 
-        if (getBitmapFromMemoryCache(key) == null) {
-
+        if (get(key) == null) {
             if (RecyclingBitmapDrawable.class.isInstance(value)) {
-
                 ((RecyclingBitmapDrawable) value).setIsCached(true);
-
             }
 
             mStorage.put(key, value);
         }
+    }
+
+    @Override
+    public String id() {
+        return ID;
     }
 
 //    @TargetApi(Build.VERSION_CODES.HONEYCOMB)

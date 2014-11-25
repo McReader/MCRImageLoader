@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package by.mcreader.imageloader;
+package by.mcreader.imageloader.task;
 
 import android.annotation.TargetApi;
 import android.os.Handler;

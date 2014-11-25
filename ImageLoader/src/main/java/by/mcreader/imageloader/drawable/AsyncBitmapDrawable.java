@@ -2,42 +2,37 @@ package by.mcreader.imageloader.drawable;
 
 import android.content.res.Resources;
 import android.graphics.Bitmap;
+import android.graphics.BitmapFactory;
 import android.graphics.drawable.BitmapDrawable;
-import android.util.Log;
 
 import java.lang.ref.WeakReference;
 
-import by.mcreader.imageloader.BaseBitmapLoader;
-import by.mcreader.imageloader.SuperImageLoaderCore;
-import by.mcreader.imageloader.callback.ImageLoaderCallback;
+import by.mcreader.imageloader.SuperImageLoader;
+import by.mcreader.imageloader.Request;
 
 public class AsyncBitmapDrawable extends BitmapDrawable {
 
-    private WeakReference<SuperImageLoaderCore.ImageAsyncTask> mDrawableTaskReference;
+    private WeakReference<SuperImageLoader.ImageAsyncTask> mTaskReference;
 
-    private WeakReference<BaseBitmapLoader> mBitmapLoader;
+    private WeakReference<Request> request;
 
-    private WeakReference<ImageLoaderCallback> mCallback;
-
-    public AsyncBitmapDrawable(Resources resources, Bitmap loadingBitmap, SuperImageLoaderCore.ImageAsyncTask loaderTask, BaseBitmapLoader bitmapLoader, ImageLoaderCallback callback) {
-        super(resources, loadingBitmap);
-
-        mDrawableTaskReference = new WeakReference<SuperImageLoaderCore.ImageAsyncTask>(loaderTask);
-
-        mBitmapLoader = new WeakReference<BaseBitmapLoader>(bitmapLoader);
-
-        if (callback != null) mCallback = new WeakReference<ImageLoaderCallback>(callback);
+    public AsyncBitmapDrawable(Resources resources, int bitmapRes, SuperImageLoader.ImageAsyncTask loaderTask, Request r) {
+        this(resources, BitmapFactory.decodeResource(resources, bitmapRes), loaderTask, r);
     }
 
-    public SuperImageLoaderCore.ImageAsyncTask getLoaderTask() {
-        return mDrawableTaskReference.get();
+    public AsyncBitmapDrawable(Resources resources, Bitmap bitmap, SuperImageLoader.ImageAsyncTask loaderTask, Request r) {
+        super(resources, bitmap);
+
+        mTaskReference = new WeakReference<SuperImageLoader.ImageAsyncTask>(loaderTask);
+
+        request = new WeakReference<Request>(r);
     }
 
-    public BaseBitmapLoader getBitmapLoader() {
-        return mBitmapLoader.get();
+    public SuperImageLoader.ImageAsyncTask getLoaderTask() {
+        return mTaskReference.get();
     }
 
-    public ImageLoaderCallback getImageLoaderCallback() {
-        return mCallback == null ? null : mCallback.get();
+    public Request getRequest() {
+        return request.get();
     }
 }

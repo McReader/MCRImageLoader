@@ -62,12 +62,7 @@ public class HttpWorker {
     }
 
     public InputStream getStream(String source) {
-
-        if (TextUtils.isEmpty(source)) {
-
-            return null;
-
-        }
+        if (TextUtils.isEmpty(source)) return null;
 
         HttpGet request = new HttpGet(source);
 
@@ -76,15 +71,12 @@ public class HttpWorker {
         BufferedHttpEntity httpEntity = null;
 
         try {
-
             response = mClient.execute(request);
 
             if (response == null || response.getStatusLine().getStatusCode() != HttpStatus.SC_OK) {
-
                 Log.e(LOG_TAG, response == null ? "UNUSUAL ERROR!" : EntityUtils.toString(response.getEntity()));
 
                 return null;
-
             }
 
             httpEntity = new BufferedHttpEntity(response.getEntity());
@@ -100,39 +92,24 @@ public class HttpWorker {
             handleError(e, request, inputStream);
 
         } finally {
-
             try {
-
                 if (httpEntity != null) {
-
                     httpEntity.consumeContent();
-
                 }
-
             } catch (IOException e) {
-
                 // can be ignored
-
             }
-
         }
 
         return inputStream;
-
     }
 
     private void handleError(Exception e, HttpGet request, InputStream inputStream) {
-
         Log.e(LOG_TAG, e == null ? "UNUSUAL ERROR!" : e.getMessage());
 
-        if (request != null) {
-
-            request.abort();
-
-        }
+        if (request != null) request.abort();
 
         IOUtils.closeStream(inputStream);
-
     }
 
 }

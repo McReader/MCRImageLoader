@@ -1,4 +1,4 @@
-package by.mcreader.imageloader.cache;
+package by.mcreader.imageloader.cache.file;
 
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -27,7 +27,7 @@ public class LimitedDiscCache extends BaseDiscCache {
 
     private int mCacheLimit;
 
-    private Map<String, Long> LRUList = Collections.synchronizedMap(new HashMap<String, Long>());
+    private final Map<String, Long> LRUList = Collections.synchronizedMap(new HashMap<String, Long>());
 
     public LimitedDiscCache(File dir, int limit) {
 
@@ -41,25 +41,17 @@ public class LimitedDiscCache extends BaseDiscCache {
     }
 
     private void initCalculateCacheSize() {
-
         new Thread(new Runnable() {
             @Override
             public void run() {
-
                 int size = 0;
 
                 File[] cachedFiles = mCacheDir == null ? null : mCacheDir.listFiles();
 
-                if (cachedFiles == null) {
-
-                    return;
-
-                }
+                if (cachedFiles == null) return;
 
                 for (File cachedFile : cachedFiles) {
-
                     if (!cachedFile.isDirectory()) {
-
                         size += cachedFile.length();
 
                         LRUList.put(cachedFile.getName(), cachedFile.lastModified());
@@ -72,49 +64,33 @@ public class LimitedDiscCache extends BaseDiscCache {
     }
 
     // update in lrulist
-    @Override
+    @Override // TODO use bitmap options
     public Bitmap get(String name) {
-
         String key = Converter.stringToMD5(name);
 
         // TODO key
         File file = IOUtils.getFileFromDir(mCacheDir, key);
 
-        if (LRUList.remove(key) != null) {
-
+        if (LRUList.remove(key) != null)
             LRUList.put(key, System.currentTimeMillis());
-
-        } else {
-
+        else
             file.setLastModified(System.currentTimeMillis());
 
-        }
-
         Bitmap bitmap = null;
-
         FileInputStream fis = null;
 
         try {
-
             if (file.exists()) {
-
                 fis = new FileInputStream(file);
 
                 bitmap = BitmapFactory.decodeFileDescriptor(fis.getFD());
-
             }
         } catch (FileNotFoundException e) {
-
             // Ignored, because not cached yet
-
         } catch (IOException e) {
-
             Log.e(LOG_TAG, e.getMessage());
-
         } finally {
-
             IOUtils.closeStream(fis);
-
         }
 
         return bitmap;
@@ -123,7 +99,6 @@ public class LimitedDiscCache extends BaseDiscCache {
     // add to lrulist
     @Override
     public File put(String name, Bitmap value) {
-
         String key = Converter.stringToMD5(name);
 
         File cached = super.put(key, value);
@@ -159,20 +134,14 @@ public class LimitedDiscCache extends BaseDiscCache {
 
     private int removeLastUsed() {
 
-        if (LRUList.size() == 0) {
+        if (LRUList.size() == 0) return 0;
 
-            return 0;
-
-        }
-
-        long oldest = -1, entryValue = -1;
+        long oldest = -1, entryValue;
 
         String oldestKey = null;
 
         synchronized (LRUList) {
-
             for (Entry<String, Long> entry : LRUList.entrySet()) {
-
                 entryValue = entry.getValue();
 
                 if (oldest == -1) {
@@ -189,19 +158,9 @@ public class LimitedDiscCache extends BaseDiscCache {
             }
         }
 
-        if (oldestKey == null) {
-
-            return 0;
-
-        }
+        if (oldestKey == null) return 0;
 
         File toRemove = new File(mCacheDir, oldestKey);
-
-        if (!toRemove.exists()) {
-
-            LRUList.remove(oldestKey);
-
-        }
 
         int removedSize = (int) toRemove.length();
 
@@ -210,11 +169,9 @@ public class LimitedDiscCache extends BaseDiscCache {
         LRUList.remove(oldestKey);
 
         return removedSize;
-
     }
 
     public void clear() {
         IOUtils.clearDir(mCacheDir);
     }
-
 }

@@ -1,183 +1,242 @@
 package by.mcreader.imageloader;
 
-import android.content.Context;
+import android.content.res.Resources;
 import android.graphics.Bitmap;
-import android.graphics.BitmapFactory;
+import android.graphics.drawable.BitmapDrawable;
+import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.util.Log;
 import android.widget.ImageView;
 
+import java.lang.ref.WeakReference;
+
+import by.mcreader.imageloader.cache.FileCache;
+import by.mcreader.imageloader.cache.MemCache;
 import by.mcreader.imageloader.callback.ImageLoaderCallback;
+import by.mcreader.imageloader.drawable.AsyncBitmapDrawable;
+import by.mcreader.imageloader.drawable.RecyclingBitmapDrawable;
+import by.mcreader.imageloader.task.AsyncTask;
+import by.mcreader.imageloader.utils.BitmapUtil;
+import by.mcreader.imageloader.utils.ImageBinder;
+import by.mcreader.imageloader.view.RecyclingImageView;
 
-/**
- * Created by Dzianis_Roi on 22.08.2014.
- */
-public class SuperImageLoader extends SuperImageLoaderCore {
+public class SuperImageLoader {
 
-    private SuperImageLoader(ImageLoaderBuilder builder) {
-        super(builder.sContext);
+    private static final String TAG = SuperImageLoader.class.getSimpleName();
 
-        setPlaceholder(builder.sPlaceholder);
+    protected Resources res;
 
-        setFadeIn(builder.sFadeIn);
-        setFadeInTime(builder.sFadeInTime);
+    protected boolean fadeIn;
+    protected int fadeInTime;
 
-        mImageCacher = new ImageCacher(
-                mContext.getCacheDir(),
-                builder.sMemoryCacheEnabled,
-                builder.sDiscCacheEnabled,
-                builder.sMemoryCacheSize,
-                builder.sDiscCacheSize);
+    private final Object pauseWorkLock = new Object();
+    private boolean pauseWork = false;
+
+    protected SuperImageLoader(Resources res, boolean fadeIn, int fadeInTime) {
+        this.res = res;
+
+        this.fadeIn = fadeIn;
+        this.fadeInTime = fadeInTime;
     }
 
+    public void load(Request r) {
+        ImageLoaderCallback cb = r.getCallback();
+
+        // if has any error => invoke error callback and finishing execution
+        if (r.hasError() && cb != null) {
+            cb.onError(r.params(), r.getView());
+            return;
+        }
+
+        // looking for memory cache implementation instance by id
+        MemCache cache = (MemCache) Provider.getService(r.memCacheId());
+        // get target view
+        RecyclingImageView view = r.getView();
+        // get all params
+        Bundle params = r.params();
+
+        // notifying, that loading has been started if callback exists
+        if (cb != null) cb.onStarted(params, view);
+
+        // if cache exists => trying to get bitmap from memory cache.
+        BitmapDrawable bd = cache == null ? null : cache.get(r.url());
+
+        if (BitmapUtil.isMatchedSize(bd, r.size())) {
+
+            if (view != null) view.setImageDrawable(bd);
+
+            if (cb != null) cb.onFinished(params, view, bd);
+
+        } else {
+
+            if (r.sync())
+                loadSync(r);
+            else
+                loadAsync(r);
+
+        }
+    }
+
+    private void loadSync(Request r) {
+        // TODO
+    }
+
+    private void loadAsync(Request r) {
+        RecyclingImageView view = r.getView();
+
+        if (cancelPotentialDownload(view, r.url())) {
+
+            ImageAsyncTask imageAsyncTask = new ImageAsyncTask();
+
+            AsyncBitmapDrawable asyncbitmapDrawable = new AsyncBitmapDrawable(res, Provider.placeholder, imageAsyncTask, r);
+
+            if (view != null) view.setImageDrawable(asyncbitmapDrawable);
+
+            imageAsyncTask.start(r);
+        }
+    }
+
+    private static boolean cancelPotentialDownload(ImageView imageView, String url) {
+        ImageAsyncTask bitmapAsyncTask = getImageLoaderTask(imageView);
+
+        if (bitmapAsyncTask == null) return true;
+
+        if (bitmapAsyncTask.url == null || !bitmapAsyncTask.url.equals(url)) {
+
+            bitmapAsyncTask.cancel(true);
+
+            Log.d(TAG, "cancelPotentialDownload for " + url);
+
+            return true;
+        }
+
+        return false;
+    }
+
+    private static ImageAsyncTask getImageLoaderTask(ImageView imageView) {
+        final Drawable drawable = imageView == null ? null : imageView.getDrawable();
+
+        return drawable instanceof AsyncBitmapDrawable ? ((AsyncBitmapDrawable) drawable).getLoaderTask() : null;
+    }
+
+    public class ImageAsyncTask extends AsyncTask<Request, Void, BitmapDrawable> {
+
+        private WeakReference<Request> reqReference;
+
+        protected String url;
+
+        private ImageAsyncTask() {
+        }
+
+        public void start(Request r) {
+            url = r.url();
+
+            this.reqReference = new WeakReference<Request>(r);
+            // custom version of AsyncTask
+            executeOnExecutor(DUAL_THREAD_EXECUTOR, r);
+        }
+
+        @Override
+        protected BitmapDrawable doInBackground(Request... params) {
+            synchronized (pauseWorkLock) {
+                while (pauseWork && !isCancelled()) {
+                    try {
+                        pauseWorkLock.wait();
+                    } catch (InterruptedException e) {
+                        // can be ignored
+                    }
+                }
+            }
+
+            Request r = getAttachedRequest();
+
+            if (r == null) return null;
+
+            FileCache file = Provider.getFileCache(r.fileCacheId());
+
+            Bitmap b = file == null ? null : file.get(url);
+
+            if (BitmapUtil.isMatchedSize(b, r.size())) return new RecyclingBitmapDrawable(res, b);
+
+            if (isCancelled()) return null;
+
+            BaseBitmapLoader l = Provider.getLoader(r.loaderId());
+            BitmapDrawable bd = null;
+
+            b = l.loadBitmap(r.params());
+
+            if (b != null) {
+                Log.d(TAG, String.format("Result Bitmap: width = %s height = %s config = %s", b.getWidth(), b.getHeight(), b.getConfig()));
+//                if (AndroidVersions.hasHoneycomb()) {
+//                    bitmapDrawable = new BitmapDrawable(mResources, bitmap);
+//                }
+//                else {
+                MemCache memory = Provider.getMemCache(r.memCacheId());
+
+                bd = new RecyclingBitmapDrawable(res, b);
+
+                if (memory != null) memory.put(url, bd);
+                if (file != null) file.put(url, b);
+//                }
+            }
+
+            return bd;
+        }
+
+        @Override
+        protected void onPostExecute(BitmapDrawable result) {
+            result = isCancelled() ? null : result;
+
+            Request r = getAttachedRequest();
+
+            // Change bitmap only if this process is still associated with it
+            if (r != null) {
+                RecyclingImageView view = r.getView();
+                ImageLoaderCallback cb = r.getCallback();
+
+                ImageBinder.setImageDrawable(res, view, result, Provider.placeholder, fadeIn, fadeInTime);
+
+                if (cb != null)
+                    cb.onFinished(r.params(), view, result);
+            }
+        }
+
+        protected Request getAttachedRequest() {
+            final Request r = reqReference.get();
+
+            if (r == null) return null;
+
+            final ImageAsyncTask bitmapWorkerTask = getImageLoaderTask(r.getView());
+
+            return this == bitmapWorkerTask ? r : null;
+        }
+
+        @Override
+        protected void onCancelled() {
+            super.onCancelled();
+
+            synchronized (pauseWorkLock) {
+                pauseWorkLock.notifyAll();
+            }
+        }
+    }
 
     /**
-     * ===========  Sync   =========
+     * Pause any ongoing background work. This can be used as a temporary
+     * measure to improve performance. For example background work could be
+     * paused when a ListView or GridView is being scrolled using a
+     * {@link android.widget.AbsListView.OnScrollListener} to keep scrolling
+     * smooth.
+     * <p/>
+     * If work is paused, be sure setPauseWork(false) is called again before
+     * your fragment or activity is destroyed (for example during
+     * {@link android.app.Activity#onPause()}), or there is a risk the
+     * background thread will never finish.
      */
-
-    public void loadBitmapSync(String url) {
-        super.loadBitmapSync(url, -1, -1, null, getDefaultLoader());
-    }
-
-    public void loadBitmapSync(String url, Bundle extra) {
-        super.loadBitmapSync(url, -1, -1, extra, getDefaultLoader());
-    }
-
-    public void loadBitmapSync(String url, BaseBitmapLoader loader) {
-        super.loadBitmapSync(url, -1, -1, null, loader);
-    }
-
-    public void loadBitmapSync(String url, int widthInPx, int heightInPx) {
-        super.loadBitmapSync(url, widthInPx, heightInPx, null, getDefaultLoader());
-    }
-
-    public void loadBitmapSync(String url, int widthInPx, int heightInPx, Bundle params) {
-        super.loadBitmapSync(url, widthInPx, heightInPx, params, getDefaultLoader());
-    }
-
-    /**
-     * ======== In Background ========
-     */
-
-    public void loadImage(ImageView imageView, String url) {
-        super.loadImage(imageView, url, -1, -1, null, null, getDefaultLoader());
-    }
-
-    public void loadImage(ImageView imageView, String url, Bundle extra) {
-        super.loadImage(imageView, url, -1, -1, extra, null, getDefaultLoader());
-    }
-
-    public void loadImage(ImageView imageView, String url, ImageLoaderCallback callback) {
-        super.loadImage(imageView, url, -1, -1, null, callback, getDefaultLoader());
-    }
-
-    public void loadImage(ImageView imageView, String url, BaseBitmapLoader loader) {
-        super.loadImage(imageView, url, -1, -1, null, null, loader);
-    }
-
-    public void loadImage(ImageView imageView, String url, int widthInPx, int heightInPx) {
-        super.loadImage(imageView, url, widthInPx, heightInPx, null, null, getDefaultLoader());
-    }
-
-    public void loadImage(ImageView imageView, String url, int widthInPx, int heightInPx, Bundle params) {
-        super.loadImage(imageView, url, widthInPx, heightInPx, params, null, getDefaultLoader());
-    }
-
-    public void loadImage(ImageView imageView, String url, int widthInPx, int heightInPx, Bundle params, ImageLoaderCallback callback) {
-        super.loadImage(imageView, url, widthInPx, heightInPx, params, callback, getDefaultLoader());
-    }
-
-    public void loadImage(ImageView imageView, String url, int widthInPx, int heightInPx, Bundle params, BaseBitmapLoader loader) {
-        super.loadImage(imageView, url, widthInPx, heightInPx, params, null, loader);
-    }
-
-    public void loadImage(ImageView imageView, String url, int widthInPx, int heightInPx, ImageLoaderCallback callback) {
-        super.loadImage(imageView, url, widthInPx, heightInPx, null, callback, getDefaultLoader());
-    }
-
-    public void loadImage(ImageView imageView, String url, int widthInPx, int heightInPx, ImageLoaderCallback callback, BaseBitmapLoader loader) {
-        super.loadImage(imageView, url, widthInPx, heightInPx, null, callback, loader);
-    }
-
-    /**
-     * ============ Builder ============
-     */
-
-    public static class ImageLoaderBuilder {
-
-        private boolean sFadeIn = true;
-        
-        private int sFadeInTime = 300;
-
-        private final Context sContext;
-
-        private Bitmap sPlaceholder;
-
-        private boolean sMemoryCacheEnabled, sDiscCacheEnabled;
-
-        private int sDiscCacheSize = -1, sMemoryCacheSize = -1;
-
-        public ImageLoaderBuilder(Context context) {
-            sContext = context;
-        }
-
-        public ImageLoaderBuilder setDiscCacheEnabled(boolean isEnabled) {
-
-            sDiscCacheEnabled = isEnabled;
-
-            return this;
-        }
-
-        public ImageLoaderBuilder setMemoryCacheEnabled(boolean isEnabled) {
-
-            sMemoryCacheEnabled = isEnabled;
-
-            return this;
-        }
-
-        public ImageLoaderBuilder setDiscCacheSize(int discCacheSizeInBytes) {
-
-            sDiscCacheSize = discCacheSizeInBytes;
-
-            return this;
-        }
-
-        public ImageLoaderBuilder setMemoryCacheSize(int memoryCacheSizeInBytes) {
-
-            sMemoryCacheSize = memoryCacheSizeInBytes;
-
-            return this;
-        }
-
-        public ImageLoaderBuilder enableFadeIn(boolean isEnabled) {
-
-            sFadeIn = isEnabled;
-
-            return this;
-        }
-
-        public ImageLoaderBuilder setFadeInTime(int time) {
-
-            sFadeInTime = time;
-
-            return this;
-        }
-
-        public ImageLoaderBuilder setPlaceholder(int resDrawableID) {
-
-            sPlaceholder = BitmapFactory.decodeResource(sContext.getResources(), resDrawableID);
-
-            return this;
-        }
-
-        public ImageLoaderBuilder setPlaceholder(Bitmap bitmap) {
-
-            sPlaceholder = bitmap;
-
-            return this;
-        }
-
-        public SuperImageLoader build() {
-            return new SuperImageLoader(this);
+    public void setPauseWork(boolean pauseWork) {
+        synchronized (pauseWorkLock) {
+            this.pauseWork = pauseWork;
+            if (!this.pauseWork) pauseWorkLock.notifyAll();
         }
     }
 }

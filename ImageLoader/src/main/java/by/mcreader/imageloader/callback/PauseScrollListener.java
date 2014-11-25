@@ -1,25 +1,25 @@
-package by.mcreader.imageloader.listener;
+package by.mcreader.imageloader.callback;
 
 import android.widget.AbsListView;
 
-import by.mcreader.imageloader.SuperImageLoaderCore;
+import by.mcreader.imageloader.SuperImageLoader;
 
 /**
  * Created by dzianis_roi on 22.07.2014.
  */
 public class PauseScrollListener implements AbsListView.OnScrollListener {
 
-    private SuperImageLoaderCore imageLoader;
+    private SuperImageLoader imageLoader;
 
     private final AbsListView.OnScrollListener externalListener;
 
     private boolean pauseOnScroll, pauseOnFling;
 
-    public PauseScrollListener(SuperImageLoaderCore imageLoader, boolean pauseOnScroll, boolean pauseOnFling) {
+    public PauseScrollListener(SuperImageLoader imageLoader, boolean pauseOnScroll, boolean pauseOnFling) {
         this(imageLoader, pauseOnScroll, pauseOnFling, null);
     }
 
-    public PauseScrollListener(SuperImageLoaderCore imageLoader, boolean pauseOnScroll, boolean pauseOnFling, AbsListView.OnScrollListener externalListener) {
+    public PauseScrollListener(SuperImageLoader imageLoader, boolean pauseOnScroll, boolean pauseOnFling, AbsListView.OnScrollListener externalListener) {
         this.imageLoader = imageLoader;
 
         this.pauseOnScroll = pauseOnScroll;

@@ -1,13 +1,17 @@
 package by.mcreader.imageloader.callback;
 
+import android.graphics.Bitmap;
 import android.graphics.drawable.BitmapDrawable;
+import android.os.Bundle;
+
+import by.mcreader.imageloader.view.RecyclingImageView;
 
 public interface ImageLoaderCallback {
 
-    void onLoadingStarted(String url);
+    void onStarted(Bundle params, RecyclingImageView imageView);
 
-    abstract void onLoadingError(Exception e, String url);
+    abstract void onError(Bundle params, RecyclingImageView imageView);
 
-    abstract void onLoadingFinished(BitmapDrawable drawable);
+    abstract void onFinished(Bundle params, RecyclingImageView imageView, BitmapDrawable drawable);
 
 }

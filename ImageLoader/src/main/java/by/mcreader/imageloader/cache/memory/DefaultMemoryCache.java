@@ -6,7 +6,6 @@ import android.support.v4.util.LruCache;
 import android.text.TextUtils;
 import android.util.Log;
 
-import by.mcreader.imageloader.cache.MemoryCache;
 import by.mcreader.imageloader.drawable.RecyclingBitmapDrawable;
 import by.mcreader.imageloader.utils.BitmapUtil;
 

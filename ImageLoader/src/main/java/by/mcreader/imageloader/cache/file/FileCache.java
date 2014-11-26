@@ -1,4 +1,4 @@
-package by.mcreader.imageloader.cache;
+package by.mcreader.imageloader.cache.file;
 
 import android.graphics.Bitmap;
 

@@ -10,8 +10,8 @@ import android.widget.ImageView;
 
 import java.lang.ref.WeakReference;
 
-import by.mcreader.imageloader.cache.FileCache;
-import by.mcreader.imageloader.cache.MemoryCache;
+import by.mcreader.imageloader.cache.file.FileCache;
+import by.mcreader.imageloader.cache.memory.MemoryCache;
 import by.mcreader.imageloader.callback.ImageLoaderCallback;
 import by.mcreader.imageloader.drawable.AsyncBitmapDrawable;
 import by.mcreader.imageloader.drawable.RecyclingBitmapDrawable;

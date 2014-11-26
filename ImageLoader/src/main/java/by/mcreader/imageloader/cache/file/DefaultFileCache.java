@@ -5,8 +5,6 @@ import android.graphics.Bitmap;
 import android.text.TextUtils;
 import android.util.Log;
 
-import by.mcreader.imageloader.cache.FileCache;
-
 /**
  * Created by Dzianis_Roi on 21.11.2014.
  */

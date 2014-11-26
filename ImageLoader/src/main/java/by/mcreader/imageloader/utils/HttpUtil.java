@@ -1,4 +1,4 @@
-package by.mcreader.imageloader.http;
+package by.mcreader.imageloader.utils;
 
 import android.text.TextUtils;
 import android.util.Log;
@@ -25,19 +25,16 @@ import org.apache.http.util.EntityUtils;
 import java.io.IOException;
 import java.io.InputStream;
 
-import by.mcreader.imageloader.utils.IOUtils;
+public class HttpUtil {
 
-public class HttpWorker {
-
-    public static final String LOG_TAG = HttpWorker.class.getSimpleName();
+    public static final String LOG_TAG = HttpUtil.class.getSimpleName();
 
     private static final String UTF_8 = "UTF_8";
     private static final int SO_TIMEOUT = 20000;
 
     private HttpClient mClient;
 
-    public HttpWorker() {
-
+    public HttpUtil() {
         HttpParams params = new BasicHttpParams();
 
         HttpProtocolParams.setVersion(params, HttpVersion.HTTP_1_1);
@@ -58,7 +55,6 @@ public class HttpWorker {
         registry.register(new Scheme("https", sslSocketFactory, 443));
 
         mClient = new DefaultHttpClient(new ThreadSafeClientConnManager(params, registry), params);
-
     }
 
     public InputStream getStream(String source) {

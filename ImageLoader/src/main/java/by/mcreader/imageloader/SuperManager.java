@@ -9,8 +9,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import by.mcreader.imageloader.cache.FileCache;
-import by.mcreader.imageloader.cache.MemoryCache;
+import by.mcreader.imageloader.cache.file.FileCache;
+import by.mcreader.imageloader.cache.memory.MemoryCache;
 import by.mcreader.imageloader.utils.Converter;
 
 /**
@@ -33,8 +33,7 @@ public class SuperManager {
     }
 
     protected static void registerServices(List<Service> services) {
-        if (services != null)
-            for (Service s : services) registerService(s);
+        if (services != null) for (Service s : services) registerService(s);
     }
 
     protected static void registerService(Service entity) {
@@ -101,7 +100,7 @@ public class SuperManager {
         placeholder = b;
     }
 
-    public class Builder {
+    public static class Builder {
 
         private List<Service> services;
 

@@ -1,12 +1,13 @@
 package by.mcreader.imageloader;
 
 import android.content.res.Resources;
+import android.graphics.Bitmap;
 
 import java.util.ArrayList;
 import java.util.List;
 
 import by.mcreader.imageloader.cache.FileCache;
-import by.mcreader.imageloader.cache.MemCache;
+import by.mcreader.imageloader.cache.MemoryCache;
 
 /**
  * Created by Dzianis_Roi on 21.11.2014.
@@ -14,6 +15,8 @@ import by.mcreader.imageloader.cache.MemCache;
 public class Builder {
 
     protected List<Service> services;
+
+    protected Bitmap placeholder;
 
     protected boolean fadeIn = true;
     protected int fadeInTime = 300;
@@ -24,7 +27,7 @@ public class Builder {
         this.res = resources;
     }
 
-    public Builder memoryCache(MemCache cache) {
+    public Builder memoryCache(MemoryCache cache) {
         if (services == null) services = new ArrayList<Service>();
 
         services.add(cache);
@@ -55,7 +58,12 @@ public class Builder {
         return this;
     }
 
-    public Provider build() {
-        return new Provider(this);
+    public Builder placeholder(Bitmap bitmap) {
+        placeholder = bitmap;
+        return this;
+    }
+
+    public SuperManager build() {
+        return new SuperManager(this);
     }
 }

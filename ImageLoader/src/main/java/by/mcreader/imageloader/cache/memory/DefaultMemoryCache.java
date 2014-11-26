@@ -6,11 +6,11 @@ import android.support.v4.util.LruCache;
 import android.text.TextUtils;
 import android.util.Log;
 
-import by.mcreader.imageloader.cache.MemCache;
+import by.mcreader.imageloader.cache.MemoryCache;
 import by.mcreader.imageloader.drawable.RecyclingBitmapDrawable;
 import by.mcreader.imageloader.utils.BitmapUtil;
 
-public class DefaultMemoryCache implements MemCache {
+public class DefaultMemoryCache implements MemoryCache {
 
     protected static final String LOG_TAG = DefaultMemoryCache.class.getSimpleName();
     public static final String ID = "cache.memory.DefaultMemoryCache";

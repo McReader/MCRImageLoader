@@ -11,11 +11,12 @@ import android.widget.ImageView;
 import java.lang.ref.WeakReference;
 
 import by.mcreader.imageloader.cache.FileCache;
-import by.mcreader.imageloader.cache.MemCache;
+import by.mcreader.imageloader.cache.MemoryCache;
 import by.mcreader.imageloader.callback.ImageLoaderCallback;
 import by.mcreader.imageloader.drawable.AsyncBitmapDrawable;
 import by.mcreader.imageloader.drawable.RecyclingBitmapDrawable;
 import by.mcreader.imageloader.task.AsyncTask;
+import by.mcreader.imageloader.utils.AndroidVersions;
 import by.mcreader.imageloader.utils.BitmapUtil;
 import by.mcreader.imageloader.utils.ImageBinder;
 import by.mcreader.imageloader.view.RecyclingImageView;
@@ -49,7 +50,7 @@ public class SuperImageLoader {
         }
 
         // looking for memory cache implementation instance by id
-        MemCache cache = (MemCache) Provider.getService(r.memCacheId());
+        MemoryCache cache = (MemoryCache) SuperManager.getService(r.memCacheId());
         // get target view
         RecyclingImageView view = r.getView();
         // get all params
@@ -88,7 +89,7 @@ public class SuperImageLoader {
 
             ImageAsyncTask imageAsyncTask = new ImageAsyncTask();
 
-            AsyncBitmapDrawable asyncbitmapDrawable = new AsyncBitmapDrawable(res, Provider.placeholder, imageAsyncTask, r);
+            AsyncBitmapDrawable asyncbitmapDrawable = new AsyncBitmapDrawable(res, SuperManager.placeholder, imageAsyncTask, r);
 
             if (view != null) view.setImageDrawable(asyncbitmapDrawable);
 
@@ -152,32 +153,29 @@ public class SuperImageLoader {
 
             if (r == null) return null;
 
-            FileCache file = Provider.getFileCache(r.fileCacheId());
+            FileCache file = SuperManager.getFileCache(r.fileCacheId());
 
             Bitmap b = file == null ? null : file.get(url);
 
-            if (BitmapUtil.isMatchedSize(b, r.size())) return new RecyclingBitmapDrawable(res, b);
+            if (BitmapUtil.isMatchedSize(b, r.size()))
+                return AndroidVersions.hasHoneycomb() ? new BitmapDrawable(res, b) : new RecyclingBitmapDrawable(res, b);
 
             if (isCancelled()) return null;
 
-            BaseBitmapLoader l = Provider.getLoader(r.loaderId());
+            BaseBitmapLoader l = SuperManager.getLoader(r.loaderId());
             BitmapDrawable bd = null;
 
             b = l.loadBitmap(r.params());
 
             if (b != null) {
                 Log.d(TAG, String.format("Result Bitmap: width = %s height = %s config = %s", b.getWidth(), b.getHeight(), b.getConfig()));
-//                if (AndroidVersions.hasHoneycomb()) {
-//                    bitmapDrawable = new BitmapDrawable(mResources, bitmap);
-//                }
-//                else {
-                MemCache memory = Provider.getMemCache(r.memCacheId());
 
-                bd = new RecyclingBitmapDrawable(res, b);
+                bd = AndroidVersions.hasHoneycomb() ? new BitmapDrawable(res, b) : new RecyclingBitmapDrawable(res, b);
+
+                MemoryCache memory = SuperManager.getMemCache(r.memCacheId());
 
                 if (memory != null) memory.put(url, bd);
                 if (file != null) file.put(url, b);
-//                }
             }
 
             return bd;
@@ -194,7 +192,7 @@ public class SuperImageLoader {
                 RecyclingImageView view = r.getView();
                 ImageLoaderCallback cb = r.getCallback();
 
-                ImageBinder.setImageDrawable(res, view, result, Provider.placeholder, fadeIn, fadeInTime);
+                ImageBinder.setImageDrawable(res, view, result, SuperManager.placeholder, fadeIn, fadeInTime);
 
                 if (cb != null)
                     cb.onFinished(r.params(), view, result);
@@ -233,10 +231,10 @@ public class SuperImageLoader {
      * {@link android.app.Activity#onPause()}), or there is a risk the
      * background thread will never finish.
      */
-    public void setPauseWork(boolean pauseWork) {
+    public void pause(boolean pause) {
         synchronized (pauseWorkLock) {
-            this.pauseWork = pauseWork;
-            if (!this.pauseWork) pauseWorkLock.notifyAll();
+            this.pauseWork = pause;
+            if (!pauseWork) pauseWorkLock.notifyAll();
         }
     }
 }

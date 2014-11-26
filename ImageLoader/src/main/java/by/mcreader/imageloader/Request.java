@@ -74,7 +74,7 @@ public class Request extends ParamsProcessor {
             return this;
         }
 
-        public Builder withLoader(String loaderId) {
+        public Builder loader(String loaderId) {
             this.params.putString(KEYS.ldr.getKey(), loaderId);
             return this;
         }
